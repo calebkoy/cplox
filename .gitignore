@@ -1,0 +1,4 @@
+**/*.o
+Tone/Tone.cbp
+**/*.exe
+Tone/Tone.depend
