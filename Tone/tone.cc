@@ -1,15 +1,9 @@
 #include <fstream>
 #include <iostream>
-#include <string>
 
-#include "scanner.h"
+#include "tone.h"
 
-void interpret(const std::string source) {
-  Scanner scanner{ source };
-  scanner.scanTokens();
-}
-
-void repl() {
+void Tone::repl() {
   std::string line;
   for (;;) {
     std::cout << ">> ";
@@ -25,7 +19,7 @@ void repl() {
   }
 }
 
-void runFile(const char *path) {
+void Tone::runFile(const char *path) {
   std::ifstream file{ path };
 
   if (!file) {
@@ -41,17 +35,10 @@ void runFile(const char *path) {
 
   std::cout << source << '\n'; // Temp
   // interpret(source);
+  // If there's been a compilation or runtime error, exit w/ appropriate exit code
 }
 
-int main(int argc, char *argv[]) {
-  if (argc == 1) {
-    repl();
-  } else if (argc == 2) {
-    runFile(argv[1]);
-  } else {
-    std::cerr << "Expected usage: tone [path]\n";
-    exit(64);
-  }
-
-  return 0;
+void Tone::interpret(const std::string& source) {
+  Scanner scanner{ source };
+  scanner.scanTokens();
 }
