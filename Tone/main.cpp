@@ -2,6 +2,13 @@
 #include <iostream>
 #include <string>
 
+#include "scanner.h"
+
+void interpret(const std::string source) {
+  Scanner scanner{ source };
+  scanner.scanTokens();
+}
+
 void repl() {
   std::string line;
   for (;;) {
@@ -13,8 +20,8 @@ void repl() {
       break;
     }
 
-    std::cout << line << '\n'; // Temp
-    // interpret(line);
+//    std::cout << line << '\n'; // Temp
+     interpret(line);
   }
 }
 
