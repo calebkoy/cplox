@@ -1,35 +1,39 @@
-#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <string>
 
 void repl() {
-  char line[1024]; // Q: Could I use std::string?
+  std::string line;
   for (;;) {
     std::cout << ">> ";
 
-    if (!fgets(line, sizeof(line), stdin)) {
+    std::getline(std::cin, line);
+    if (line.empty()) {
       std::cout << '\n';
       break;
     }
 
-    std::cout << line << '\n';
+    std::cout << line << '\n'; // Temp
+    // interpret(line);
   }
 }
 
 void runFile(const char *path) {
-  std::ifstream inputFile{ path };
+  std::ifstream file{ path };
 
-  if (!inputFile) {
+  if (!file) {
     std::cerr << "Cannot open " << path << " for reading.\n";
     exit(66);
   }
 
-  while (inputFile) {
-    std::string fileText;
-    std::getline(inputFile, fileText);
-    std::cout << fileText << '\n';
-  }
+  file.seekg(0, std::ios::end);
+  size_t size = file.tellg();
+  std::string source(size, ' ');
+  file.seekg(0);
+  file.read(&source[0], size);
+
+  std::cout << source << '\n'; // Temp
+  // interpret(source);
 }
 
 int main(int argc, char *argv[]) {
@@ -38,8 +42,8 @@ int main(int argc, char *argv[]) {
   } else if (argc == 2) {
     runFile(argv[1]);
   } else {
-    // Print an error, telling the user the expected usage
-    // Exit w/ an exit code
+    std::cerr << "Expected usage: tone [path]\n";
+    exit(64);
   }
 
   return 0;
