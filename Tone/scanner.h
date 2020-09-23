@@ -1,6 +1,7 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -62,6 +63,7 @@ class Scanner {
   int current{ 0 };
   int line{ 1 };
   ErrorReporter reporter;
+  std::unordered_map<std::string, TokenType> reservedWords;
 
 public:
   Scanner(const std::string source);
