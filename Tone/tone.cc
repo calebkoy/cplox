@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "scanner.h"
 #include "tone.h"
 
 void Tone::repl() {
@@ -33,12 +34,69 @@ void Tone::runFile(const char *path) {
   file.seekg(0);
   file.read(&source[0], size);
 
-  std::cout << source << '\n'; // Temp
-  // interpret(source);
+  // std::cout << source << '\n'; // Temp
+  interpret(source);
   // If there's been a compilation or runtime error, exit w/ appropriate exit code
+}
+
+std::ostream& operator<<(std::ostream& out, TokenType type) {
+  std::string s;
+#define PROCESS_VAL(p) case(p): s = #p; break
+  switch(type) {
+    PROCESS_VAL(TOKEN_LEFT_PAREN);
+    PROCESS_VAL(TOKEN_RIGHT_PAREN);
+    PROCESS_VAL(TOKEN_LEFT_BRACE);
+    PROCESS_VAL(TOKEN_RIGHT_BRACE);
+    PROCESS_VAL(TOKEN_STAR);
+    PROCESS_VAL(TOKEN_SLASH);
+    PROCESS_VAL(TOKEN_PLUS);
+    PROCESS_VAL(TOKEN_MINUS);
+    PROCESS_VAL(TOKEN_SEMICOLON);
+    PROCESS_VAL(TOKEN_DOT);
+    PROCESS_VAL(TOKEN_COMMA);
+    PROCESS_VAL(TOKEN_BANG);
+    PROCESS_VAL(TOKEN_BANG_EQUAL);
+    PROCESS_VAL(TOKEN_EQUAL);
+    PROCESS_VAL(TOKEN_EQUAL_EQUAL);
+    PROCESS_VAL(TOKEN_GREATER);
+    PROCESS_VAL(TOKEN_GREATER_EQUAL);
+    PROCESS_VAL(TOKEN_LESS);
+    PROCESS_VAL(TOKEN_LESS_EQUAL);
+    PROCESS_VAL(TOKEN_TRUE);
+    PROCESS_VAL(TOKEN_FALSE);
+    PROCESS_VAL(TOKEN_NULL);
+    PROCESS_VAL(TOKEN_STRING);
+    PROCESS_VAL(TOKEN_NUMBER);
+    PROCESS_VAL(TOKEN_FUNCTION);
+    PROCESS_VAL(TOKEN_CLASS);
+    PROCESS_VAL(TOKEN_VAR);
+    PROCESS_VAL(TOKEN_EXTENDS);
+    PROCESS_VAL(TOKEN_PRINT); // Remove when print is in standard library
+    PROCESS_VAL(TOKEN_FOR);
+    PROCESS_VAL(TOKEN_WHILE);
+    PROCESS_VAL(TOKEN_IF);
+    PROCESS_VAL(TOKEN_ELSE);
+    PROCESS_VAL(TOKEN_RETURN);
+    PROCESS_VAL(TOKEN_OR);
+    PROCESS_VAL(TOKEN_AND);
+    PROCESS_VAL(TOKEN_THIS);
+    PROCESS_VAL(TOKEN_SUPER);
+    PROCESS_VAL(TOKEN_IDENTIFIER);
+    PROCESS_VAL(TOKEN_EOF);
+  }
+#undef PROCESS_VAL
+
+  return out << s;
 }
 
 void Tone::interpret(const std::string& source) {
   Scanner scanner{ source };
-  scanner.scanTokens();
+  std::vector<Token> tokens = scanner.scanTokens();
+
+  auto begin{ tokens.begin() };
+  auto end{ tokens.end() };
+  for (auto p{ begin }; p != end; ++p) {
+    Token token = *p;
+    std::cout << token.type << " " << source.substr(token.start, token.length) << '\n';
+  }
 }

@@ -2,6 +2,7 @@
 #define TONE_H
 
 #include <string>
+#include <vector>
 
 #include "scanner.h"
 

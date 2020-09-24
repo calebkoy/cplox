@@ -1,0 +1,23 @@
+these
+are
+identifiers
+form
+is
+one
+anddd
+so
+is
+trues
+
+// Expect:
+// TOKEN_IDENTIFIER these
+// TOKEN_IDENTIFIER are
+// TOKEN_IDENTIFIER identifiers
+// TOKEN_IDENTIFIER form
+// TOKEN_IDENTIFIER is
+// TOKEN_IDENTIFIER one
+// TOKEN_IDENTIFIER anddd
+// TOKEN_IDENTIFIER so
+// TOKEN_IDENTIFIER is
+// TOKEN_IDENTIFIER trues
+// TOKEN_EOF 

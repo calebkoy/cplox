@@ -6,7 +6,7 @@
 
 class ErrorReporter {
 public:
-  void report(const std::string& message);
+  void report(int line, const std::string& message);
 };
 
 #endif // ERROR_REPORTER_H

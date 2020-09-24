@@ -1,8 +1,8 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
-#include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "error_reporter.h"
@@ -52,7 +52,8 @@ enum TokenType {
 
 typedef struct {
   TokenType type;
-  int line;
+  int line; // Q: Is this needed?
+  int start;
   int length;
 } Token;
 
@@ -63,7 +64,25 @@ class Scanner {
   int current{ 0 };
   int line{ 1 };
   ErrorReporter reporter;
-  std::unordered_map<std::string, TokenType> reservedWords;
+  std::unordered_map<std::string, TokenType> reservedWords = {
+    {"true", TOKEN_TRUE},
+    {"false", TOKEN_FALSE},
+    {"null", TOKEN_NULL},
+    {"function", TOKEN_FUNCTION},
+    {"class", TOKEN_CLASS},
+    {"var", TOKEN_VAR},
+    {"extends", TOKEN_EXTENDS},
+    {"print", TOKEN_PRINT}, // Get rid of this when print is in standard library
+    {"for", TOKEN_FOR},
+    {"while", TOKEN_WHILE},
+    {"if", TOKEN_IF},
+    {"else", TOKEN_ELSE},
+    {"return", TOKEN_RETURN},
+    {"or", TOKEN_OR},
+    {"and", TOKEN_AND},
+    {"this", TOKEN_THIS},
+    {"super", TOKEN_SUPER}
+  };
 
 public:
   Scanner(const std::string source);
@@ -76,9 +95,7 @@ private:
   char advance();
   bool isDigit(char c);
   bool isAlpha(char c);
-  void addToken(TokenType type);
-  void addToken(TokenType type, int length);
-  Token makeToken(TokenType type);
+  void addToken(TokenType type, int start, int length);
   bool match(char c);
   char peek();
   char peekNext();

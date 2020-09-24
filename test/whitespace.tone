@@ -1,0 +1,13 @@
+spaces     tabs       newlines
+
+
+
+
+done
+
+// Expect:
+// TOKEN_IDENTIFIER spaces
+// TOKEN_IDENTIFIER tabs
+// TOKEN_IDENTIFIER newlines
+// TOKEN_IDENTIFIER done
+// TOKEN_EOF
