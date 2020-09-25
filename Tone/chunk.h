@@ -9,7 +9,12 @@
 
 enum OpCode {
   OP_CONSTANT,
-  OP_RETURN,
+  OP_ADD,
+  OP_SUBTRACT,
+  OP_MULTIPLY,
+  OP_DIVIDE,
+  OP_NEGATE,
+  OP_RETURN
 };
 
 struct LineStart {
@@ -22,7 +27,6 @@ class Chunk {
   std::vector<Value> constants;
   std::vector<LineStart> lines;
 
-  int disassembleInstruction(int offset);
   int disassembleSimpleInstruction(const std::string& name, int offset);
   int disassembleConstantInstruction(const std::string& name, int offset);
   int getLine(int offset);
@@ -30,7 +34,10 @@ class Chunk {
 public:
   void appendByte(uint8_t byte, int line);
   void disassemble();
+  int disassembleInstruction(int offset);
   int addConstant(Value value);
+  std::vector<uint8_t> getBytecode();
+  std::vector<Value> getConstants();
 };
 
 #endif // CHUNK_H

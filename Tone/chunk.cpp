@@ -30,6 +30,16 @@ int Chunk::disassembleInstruction(int offset) {
   switch (instruction) {
     case OP_CONSTANT:
       return disassembleConstantInstruction("OP_CONSTANT", offset);
+    case OP_ADD:
+      return disassembleSimpleInstruction("OP_ADD", offset);
+    case OP_SUBTRACT:
+      return disassembleSimpleInstruction("OP_SUBTRACT", offset);
+    case OP_MULTIPLY:
+      return disassembleSimpleInstruction("OP_MULTIPLY", offset);
+    case OP_DIVIDE:
+      return disassembleSimpleInstruction("OP_DIVIDE", offset);
+    case OP_NEGATE:
+      return disassembleSimpleInstruction("OP_NEGATE", offset);
     case OP_RETURN:
       return disassembleSimpleInstruction("OP_RETURN", offset);
     default:
@@ -71,4 +81,12 @@ int Chunk::getLine(int offset) {
       start = mid + 1;
     }
   }
+}
+
+std::vector<uint8_t> Chunk::getBytecode() {
+  return bytecode;
+}
+
+std::vector<Value> Chunk::getConstants() {
+  return constants;
 }
