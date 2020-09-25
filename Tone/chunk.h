@@ -12,17 +12,20 @@ enum OpCode {
   OP_RETURN,
 };
 
+struct LineStart {
+  int line;
+  int offset;
+};
+
 class Chunk {
   std::vector<uint8_t> bytecode;
   std::vector<Value> constants;
-  //std::vector<int> lines;
-  std::map<int, int> lines;
-
+  std::vector<LineStart> lines;
 
   int disassembleInstruction(int offset);
   int disassembleSimpleInstruction(const std::string& name, int offset);
   int disassembleConstantInstruction(const std::string& name, int offset);
-  int getLine(int instructionIndex);
+  int getLine(int offset);
 
 public:
   void appendByte(uint8_t byte, int line);

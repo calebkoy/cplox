@@ -4,16 +4,11 @@
 
 void Chunk::appendByte(uint8_t byte, int line) {
   bytecode.push_back(byte);
-  //lines.push_back(line);
 
-  // if lines has key `line`, increment the value
-  std::map<int, int>::iterator it = lines.find(line);
-  if (it != lines.end()) {
-    ++it->second;
-  } else {
-    lines.insert(std::make_pair(line, 1));
-  }
-  // o/w add the key w/ a value of 1
+  if (!lines.empty() && lines.at(lines.size()-1).line == line) return;
+
+  LineStart lineStart{ line, (int)(bytecode.size()-1) };
+  lines.push_back(lineStart);
 }
 
 void Chunk::disassemble() {
@@ -59,15 +54,21 @@ int Chunk::disassembleConstantInstruction(const std::string& name, int offset) {
   return offset + 2;
 }
 
-int Chunk::getLine(int instructionIndex) {
-  if (instructionIndex < 0) return -1;
+int Chunk::getLine(int offset) {
+  if (offset < 0) return -1;
 
-  auto it{ lines.cbegin() };
-  int valueSum{ 0 };
-  while (it != lines.cend()) {
-    valueSum += it->second;
-    if (valueSum >= instructionIndex+1) return it->first;
+  int start = 0;
+  int end = (int)(lines.size() - 1);
+
+  for (;;) {
+    int mid = (start + end) / 2;
+    LineStart lineStart = lines.at(mid);
+    if (offset < lineStart.offset) {
+      end = mid - 1;
+    } else if (mid == (int)(lines.size() - 1) || offset < lines.at(mid + 1).offset) {
+      return lineStart.line;
+    } else {
+      start = mid + 1;
+    }
   }
-
-  return -1;
 }
