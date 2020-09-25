@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "compiler.h"
 #include "scanner.h"
 #include "tone.h"
 
@@ -93,10 +94,13 @@ void Tone::interpret(const std::string& source) {
   Scanner scanner{ source };
   std::vector<Token> tokens = scanner.scanTokens();
 
-  auto begin{ tokens.begin() };
-  auto end{ tokens.end() };
-  for (auto p{ begin }; p != end; ++p) {
-    Token token = *p;
-    std::cout << token.type << " " << source.substr(token.start, token.length) << '\n';
-  }
+//  auto begin{ tokens.begin() };
+//  auto end{ tokens.end() };
+//  for (auto p{ begin }; p != end; ++p) {
+//    Token token = *p;
+//    std::cout << token.type << " " << source.substr(token.start, token.length) << '\n';
+//  }
+
+  Compiler compiler;
+  compiler.compile(source, tokens);
 }

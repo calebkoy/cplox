@@ -55,6 +55,7 @@ typedef struct {
   int line; // Q: Is this needed?
   int start;
   int length;
+  std::string lexeme;
 } Token;
 
 class Scanner {
