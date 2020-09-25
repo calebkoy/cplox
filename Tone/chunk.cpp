@@ -4,7 +4,16 @@
 
 void Chunk::appendByte(uint8_t byte, int line) {
   bytecode.push_back(byte);
-  lines.push_back(line);
+  //lines.push_back(line);
+
+  // if lines has key `line`, increment the value
+  std::map<int, int>::iterator it = lines.find(line);
+  if (it != lines.end()) {
+    ++it->second;
+  } else {
+    lines.insert(std::make_pair(line, 1));
+  }
+  // o/w add the key w/ a value of 1
 }
 
 void Chunk::disassemble() {
@@ -15,10 +24,11 @@ void Chunk::disassemble() {
 
 int Chunk::disassembleInstruction(int offset) {
   std::cout << offset << " ";
-  if (offset > 0 && lines.at(offset) == lines.at(offset-1)) {
+  int line = getLine(offset);
+  if (offset > 0 && line == getLine(offset-1)) {
     std::cout << "  | ";
   } else {
-    std::cout << lines.at(offset) << " ";
+    std::cout << line << " ";
   }
 
   uint8_t instruction = bytecode.at(offset);
@@ -47,4 +57,17 @@ int Chunk::disassembleConstantInstruction(const std::string& name, int offset) {
   uint8_t constant = bytecode.at(offset + 1);
   std::cout << name << " " << +constant << " '" << constants.at(constant) << "'\n";
   return offset + 2;
+}
+
+int Chunk::getLine(int instructionIndex) {
+  if (instructionIndex < 0) return -1;
+
+  auto it{ lines.cbegin() };
+  int valueSum{ 0 };
+  while (it != lines.cend()) {
+    valueSum += it->second;
+    if (valueSum >= instructionIndex+1) return it->first;
+  }
+
+  return -1;
 }
