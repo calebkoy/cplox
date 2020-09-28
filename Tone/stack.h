@@ -16,6 +16,7 @@ public:
   void reset();
   void push(Value value);
   Value pop();
+  Value peek(int distance);
   void print();
 };
 

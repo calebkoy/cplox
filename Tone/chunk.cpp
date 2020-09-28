@@ -30,6 +30,12 @@ int Chunk::disassembleInstruction(int offset) {
   switch (instruction) {
     case OP_CONSTANT:
       return disassembleConstantInstruction("OP_CONSTANT", offset);
+    case OP_NULL:
+      return disassembleSimpleInstruction("OP_NULL", offset);
+    case OP_TRUE:
+      return disassembleSimpleInstruction("OP_TRUE", offset);
+    case OP_FALSE:
+      return disassembleSimpleInstruction("OP_FALSE", offset);
     case OP_ADD:
       return disassembleSimpleInstruction("OP_ADD", offset);
     case OP_SUBTRACT:

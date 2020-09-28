@@ -9,6 +9,9 @@
 
 enum OpCode {
   OP_CONSTANT,
+  OP_NULL,
+  OP_TRUE,
+  OP_FALSE,
   OP_ADD,
   OP_SUBTRACT,
   OP_MULTIPLY,
@@ -29,13 +32,13 @@ class Chunk {
 
   int disassembleSimpleInstruction(const std::string& name, int offset);
   int disassembleConstantInstruction(const std::string& name, int offset);
-  int getLine(int offset);
 
 public:
   void appendByte(uint8_t byte, int line);
   void disassemble();
   int disassembleInstruction(int offset);
   int addConstant(Value value);
+  int getLine(int offset);
   std::vector<uint8_t> getBytecode();
   std::vector<Value> getConstants();
 };

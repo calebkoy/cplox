@@ -22,6 +22,10 @@ class VM {
   void divide();
   void multiply();
 
+  // Q: how can I write this so it's handled by ErrorReporter?
+  // Q: does this need to be variadic?
+  void runtimeError(const char* format, ...);
+
 public:
   VM(Chunk chunk);
   InterpretResult interpret();

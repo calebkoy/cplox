@@ -18,10 +18,17 @@ Value Stack::pop() {
   return *top;
 }
 
+Value Stack::peek(int distance) {
+  //Q: does std:array store its members in contiguous slots? If not, how do I fix this function?
+  // Q: what's the best way to return? By pointer? By value?
+
+  return *(top - 1 - distance);
+}
+
 void Stack::print() {
   auto begin{ arr.begin() };
 
   for (auto p{ begin }; p < top; ++p) {
-    std::cout << "[ " << *p << " ]";
+    std::cout << "[ " << (*p) << " ]";
   }
 }

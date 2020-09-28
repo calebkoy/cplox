@@ -72,17 +72,17 @@ void Compiler::invokePrefixRule() {
     case TOKEN_AND: break;
     case TOKEN_CLASS: break;
     case TOKEN_ELSE: break;
-    case TOKEN_FALSE: break;
+    case TOKEN_FALSE: literal(); break;
     case TOKEN_FOR: break;
     case TOKEN_FUNCTION: break;
     case TOKEN_IF: break;
-    case TOKEN_NULL: break;
+    case TOKEN_NULL: literal(); break;
     case TOKEN_OR: break;
     case TOKEN_PRINT: break;
     case TOKEN_RETURN: break;
     case TOKEN_SUPER: break;
     case TOKEN_THIS: break;
-    case TOKEN_TRUE: break;
+    case TOKEN_TRUE: literal(); break;
     case TOKEN_VAR: break;
     case TOKEN_WHILE: break;
     case TOKEN_ERROR: break;
@@ -146,11 +146,21 @@ void Compiler::number() {
   // According to this thread, it depends on the locale:
   // https://stackoverflow.com/questions/1012571/stdstring-to-float-or-double
   double value = std::stod(previous.lexeme);
-
-  emitConstant(value);
+  emitConstant(Value{ VAL_NUMBER, value });
 
 }
 
+void Compiler::literal() {
+  switch (previous.type) {
+    case TOKEN_FALSE: emitByte(OP_FALSE); break;
+    case TOKEN_NULL: emitByte(OP_NULL); break;
+    case TOKEN_TRUE: emitByte(OP_TRUE); break;
+    default:
+      return;
+  }
+}
+
+// Q: should this class be passed by value?
 void Compiler::emitConstant(Value value) {
   emitBytes(OP_CONSTANT, makeConstant(value));
 }
