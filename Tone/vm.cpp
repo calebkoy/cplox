@@ -30,7 +30,7 @@ InterpretResult VM::run() {
       case OP_SUBTRACT: subtract(); break;
       case OP_DIVIDE: divide(); break;
       case OP_MULTIPLY: multiply(); break;
-      case OP_NEGATE: stack.push(-stack.pop());
+      case OP_NEGATE: stack.push(-stack.pop()); break;
       case OP_RETURN: {
         std::cout << stack.pop() << '\n';
         return INTERPRET_OK;

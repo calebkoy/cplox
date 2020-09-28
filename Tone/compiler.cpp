@@ -9,46 +9,6 @@
 // See https://stackoverflow.com/questions/7575459/c-should-i-initialize-pointer-members-that-are-assigned-to-in-the-constructor
 Compiler::Compiler(const std::vector<Token> tokens, Chunk *chunk) :
   tokens{ tokens }, chunk{ chunk }, compilingChunk{ chunk } {
-//  rules[TOKEN_LEFT_PAREN] = (ParseRule){ grouping, NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_RIGHT_PAREN]   = (ParseRule){ NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_LEFT_BRACE]    = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_RIGHT_BRACE]   = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_COMMA]         = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_DOT]           = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_MINUS]         = (ParseRule){ unary,    binary, PRECEDENCE_TERM };
-//  rules[TOKEN_PLUS]          = { NULL,     binary, PRECEDENCE_TERM };
-//  rules[TOKEN_SEMICOLON]     = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_SLASH]         = { NULL,     binary, PRECEDENCE_FACTOR };
-//  rules[TOKEN_STAR]          = { NULL,     binary, PRECEDENCE_FACTOR };
-//  rules[TOKEN_BANG]          = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_BANG_EQUAL]    = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_EQUAL]         = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_EQUAL_EQUAL]   = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_GREATER]       = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_GREATER_EQUAL] = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_LESS]          = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_LESS_EQUAL]    = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_IDENTIFIER]    = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_STRING]        = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_NUMBER]        = { number,   NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_AND]           = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_CLASS]         = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_ELSE]          = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_FALSE]         = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_FOR]           = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_FUNCTION]           = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_IF]            = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_NULL]           = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_OR]            = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_PRINT]         = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_RETURN]        = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_SUPER]         = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_THIS]          = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_TRUE]          = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_VAR]           = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_WHILE]         = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_ERROR]         = { NULL,     NULL,   PRECEDENCE_NONE };
-//  rules[TOKEN_EOF]           = { NULL,     NULL,   PRECEDENCE_NONE };
 }
 
 bool Compiler::compile() {

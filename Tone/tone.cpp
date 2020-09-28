@@ -109,6 +109,5 @@ InterpretResult Tone::interpret(const std::string& source) {
   }
 
   VM vm{ chunk };
-  chunk.disassemble();
   return vm.run();
 }
