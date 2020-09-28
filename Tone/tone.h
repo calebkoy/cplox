@@ -5,10 +5,11 @@
 #include <vector>
 
 #include "scanner.h"
+#include "vm.h"
 
 class Tone {
 private:
-  void interpret(const std::string& source);
+  InterpretResult interpret(const std::string& source);
 
 public:
   void repl();

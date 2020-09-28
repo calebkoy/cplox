@@ -47,7 +47,8 @@ enum TokenType {
 
   // Other
   TOKEN_IDENTIFIER,
-  TOKEN_EOF
+  TOKEN_EOF,
+  TOKEN_ERROR
 };
 
 typedef struct {
@@ -96,7 +97,7 @@ private:
   char advance();
   bool isDigit(char c);
   bool isAlpha(char c);
-  void addToken(TokenType type, int start, int length);
+  void addToken(TokenType type, const std::string &lexeme, int start, int length);
   bool match(char c);
   char peek();
   char peekNext();

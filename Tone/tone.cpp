@@ -84,13 +84,14 @@ std::ostream& operator<<(std::ostream& out, TokenType type) {
     PROCESS_VAL(TOKEN_SUPER);
     PROCESS_VAL(TOKEN_IDENTIFIER);
     PROCESS_VAL(TOKEN_EOF);
+    PROCESS_VAL(TOKEN_ERROR);
   }
 #undef PROCESS_VAL
 
   return out << s;
 }
 
-void Tone::interpret(const std::string& source) {
+InterpretResult Tone::interpret(const std::string& source) {
   Scanner scanner{ source };
   std::vector<Token> tokens = scanner.scanTokens();
 
@@ -101,6 +102,13 @@ void Tone::interpret(const std::string& source) {
 //    std::cout << token.type << " " << source.substr(token.start, token.length) << '\n';
 //  }
 
-  Compiler compiler;
-  compiler.compile(source, tokens);
+  Chunk chunk;
+  Compiler compiler{ tokens, &chunk };
+  if (!compiler.compile()) {
+    return INTERPRET_COMPILATION_ERROR;
+  }
+
+  VM vm{ chunk };
+  chunk.disassemble();
+  return vm.run();
 }

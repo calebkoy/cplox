@@ -10,7 +10,7 @@ std::vector<Token> Scanner::scanTokens() {
     scanToken();
   }
 
-  addToken(TOKEN_EOF, (int)source.size(), 0);
+  addToken(TOKEN_EOF, "", (int)source.size(), 0);
 
   return tokens;
 }
@@ -31,34 +31,34 @@ void Scanner::scanToken() {
   }
 
   switch (c) {
-    case '(': addToken(TOKEN_LEFT_PAREN, start, 1);                                 break;
-    case ')': addToken(TOKEN_RIGHT_PAREN, start, 1);                                break;
-    case '{': addToken(TOKEN_LEFT_BRACE, start, 1);                                 break;
-    case '}': addToken(TOKEN_RIGHT_BRACE, start, 1);                                break;
-    case '+': addToken(TOKEN_PLUS, start, 1);                                       break;
-    case '-': addToken(TOKEN_MINUS, start, 1);                                      break;
-    case '*': addToken(TOKEN_STAR, start, 1);                                       break;
-    case ';': addToken(TOKEN_SEMICOLON, start, 1);                                  break;
-    case '.': addToken(TOKEN_DOT, start, 1);                                        break;
-    case ',': addToken(TOKEN_COMMA, start, 1);                                      break;
+    case '(': addToken(TOKEN_LEFT_PAREN, source.substr(start, current-start), start, 1);                                 break;
+    case ')': addToken(TOKEN_RIGHT_PAREN, source.substr(start, current-start), start, 1);                                break;
+    case '{': addToken(TOKEN_LEFT_BRACE, source.substr(start, current-start), start, 1);                                 break;
+    case '}': addToken(TOKEN_RIGHT_BRACE, source.substr(start, current-start), start, 1);                                break;
+    case '+': addToken(TOKEN_PLUS, source.substr(start, current-start), start, 1);                                       break;
+    case '-': addToken(TOKEN_MINUS, source.substr(start, current-start), start, 1);                                      break;
+    case '*': addToken(TOKEN_STAR, source.substr(start, current-start), start, 1);                                       break;
+    case ';': addToken(TOKEN_SEMICOLON, source.substr(start, current-start), start, 1);                                  break;
+    case '.': addToken(TOKEN_DOT, source.substr(start, current-start), start, 1);                                        break;
+    case ',': addToken(TOKEN_COMMA, source.substr(start, current-start), start, 1);                                      break;
     case '!':
-      match('=') ? addToken(TOKEN_BANG_EQUAL, start, 2) : addToken(TOKEN_BANG, start, 1);
+      match('=') ? addToken(TOKEN_BANG_EQUAL, source.substr(start, current-start), start, 2) : addToken(TOKEN_BANG, source.substr(start, current-start), start, 1);
       break;
     case '=':
-      match('=') ? addToken(TOKEN_EQUAL_EQUAL, start, 2) : addToken(TOKEN_EQUAL, start, 1);
+      match('=') ? addToken(TOKEN_EQUAL_EQUAL, source.substr(start, current-start), start, 2) : addToken(TOKEN_EQUAL, source.substr(start, current-start), start, 1);
       break;
     case '>':
-      match('=') ? addToken(TOKEN_GREATER_EQUAL, start, 2) : addToken(TOKEN_GREATER, start, 1);
+      match('=') ? addToken(TOKEN_GREATER_EQUAL, source.substr(start, current-start), start, 2) : addToken(TOKEN_GREATER, source.substr(start, current-start), start, 1);
       break;
     case '<':
-      match('=') ? addToken(TOKEN_LESS_EQUAL, start, 2) : addToken(TOKEN_LESS, start, 1);
+      match('=') ? addToken(TOKEN_LESS_EQUAL, source.substr(start, current-start), start, 2) : addToken(TOKEN_LESS, source.substr(start, current-start), start, 1);
       break;
     case '/': {
       if (match('/')) {
         while (!isAtEnd() && peek() != '\n') advance();
         if (peek() == '\n') line++;
       } else {
-        addToken(TOKEN_SLASH, start, 1);
+        addToken(TOKEN_SLASH, source.substr(start, current-start), start, 1);
       }
       break;
     }
@@ -98,7 +98,7 @@ void Scanner::scanNumber() {
     while (isDigit(peek())) advance();
   }
 
-  addToken(TOKEN_NUMBER, start, current - start);
+  addToken(TOKEN_NUMBER, source.substr(start, current-start), start, current - start);
 }
 
 void Scanner::scanAlpha() {
@@ -107,15 +107,17 @@ void Scanner::scanAlpha() {
   std::string text = source.substr(start, current-start);
 
   if (reservedWords.find(text) != reservedWords.end()) {
-    addToken(reservedWords[text], start, current - start);
+    addToken(reservedWords[text], text, start, current - start);
   } else {
-    addToken(TOKEN_IDENTIFIER, start, current - start);
+    addToken(TOKEN_IDENTIFIER, text, start, current - start);
   }
 }
 
-void Scanner::addToken(TokenType type, int start, int length) {
+void Scanner::addToken(TokenType type, const std::string &lexeme, int start, int length) {
   Token token;
   token.type = type;
+  token.line = line;
+  token.lexeme = lexeme;
   token.start = start;
   token.length = length;
   tokens.push_back(token);
@@ -151,5 +153,6 @@ void Scanner::scanString() {
 
   advance();
   int length = current - start - 2;
-  addToken(TOKEN_STRING, start+1, length);
+  std::string lexeme = source.substr(start+1, length);
+  addToken(TOKEN_STRING, lexeme, start+1, length);
 }
