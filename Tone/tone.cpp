@@ -24,7 +24,7 @@ void Tone::repl() {
     }
 
 //    std::cout << line << '\n'; // Temp
-     interpret(line, objects, strings);
+     interpret(line, objects, &strings);
   }
 
   vm.freeObjects();
@@ -53,7 +53,7 @@ void Tone::runFile(const char *path) {
 
   // Todo: refactor use of strings in both repl and runFile
 
-  interpret(source, objects, strings);
+  interpret(source, objects, &strings);
 
   // Todo: If there's been a compilation or runtime error, exit w/ appropriate exit code
 
@@ -112,7 +112,7 @@ std::ostream& operator<<(std::ostream& out, TokenType type) {
 }
 
 InterpretResult Tone::interpret(const std::string& source, Object *&objects,
-                                std::unordered_map<std::string, Value> &strings) {
+                                std::unordered_map<std::string, Value> *strings) {
   Scanner scanner{ source };
   std::vector<Token> tokens = scanner.scanTokens();
 
@@ -131,6 +131,13 @@ InterpretResult Tone::interpret(const std::string& source, Object *&objects,
   if (!compiler.compile()) {
     return INTERPRET_COMPILATION_ERROR;
   }
+
+  std::unordered_map<std::string, Value>::iterator tempIt;
+  std::cout << "\nAll the strings in the strings map (compile() just ran):" << '\n';
+  for (tempIt = strings->begin(); tempIt != strings->end(); ++tempIt) {
+    std::cout << tempIt->first << '\n';
+  }
+  std::cout << '\n';
 
   vm.setChunk(chunk);
   vm.setObjects(objects);

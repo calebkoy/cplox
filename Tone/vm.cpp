@@ -56,6 +56,29 @@ InterpretResult VM::run() {
         stack.pop();
         break;
       }
+
+      case OP_SET_GLOBAL: {
+        StringObject* name = readString();
+        std::unordered_map<std::string, Value>::iterator it = globals.find(name->getChars());
+        if (it == globals.end()) {
+          // Implicit variable declaration not allowed
+          // Todo: change getChars and chars to getString and string
+          runtimeError("Undefined variable '%s'.", name->getChars().c_str());
+          return INTERPRET_RUNTIME_ERROR;
+        } else {
+          it->second = stack.peek(0);
+        }
+
+        std::unordered_map<std::string, Value>::iterator tempIt;
+        std::cout << "\nAll the strings in the globals map:" << '\n';
+        for (tempIt = globals.begin(); tempIt != globals.end(); ++tempIt) {
+          std::cout << tempIt->first << ": " << tempIt->second << '\n';
+        }
+        std::cout << '\n';
+
+        break;
+      }
+
       case OP_EQUAL: {
         Value b = stack.pop();
         Value a = stack.pop();

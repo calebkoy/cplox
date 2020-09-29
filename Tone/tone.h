@@ -14,7 +14,7 @@ private:
   VM vm;
 
   InterpretResult interpret(const std::string& source, Object *&objects,
-                            std::unordered_map<std::string, Value> &strings);
+                            std::unordered_map<std::string, Value> *strings);
 
 public:
   void repl();

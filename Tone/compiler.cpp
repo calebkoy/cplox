@@ -5,11 +5,13 @@
 
 #define DEBUG_PRINT_CODE
 
+// Q: should there be a default constructor that sets pointer members to nullptr?
+
 // Q: should I be using smart pointers and/or move semantics here
 // to ensure that there are no memory leaks?
 // See https://stackoverflow.com/questions/7575459/c-should-i-initialize-pointer-members-that-are-assigned-to-in-the-constructor
 Compiler::Compiler(const std::vector<Token> tokens, Chunk *chunk,
-                   Object *&objects, std::unordered_map<std::string, Value> &strings) :
+                   Object *&objects, std::unordered_map<std::string, Value> *strings) :
   tokens{ tokens }, chunk{ chunk }, compilingChunk{ chunk }, objects{ objects }, strings{ strings } {
 }
 
@@ -130,14 +132,19 @@ void Compiler::expression() {
 
 void Compiler::parsePrecedence(Precedence precedence) {
   advance();
-  invokePrefixRule();
+  bool canAssign = precedence <= PRECEDENCE_ASSIGNMENT;
+  invokePrefixRule(canAssign);
   while (precedence <= tokenPrecedence[current.type]) {
     advance();
-    invokeInfixRule();
+    invokeInfixRule(canAssign);
+  }
+
+  if (canAssign && match(TOKEN_EQUAL)) {
+    error("Invalid assignment target.");
   }
 }
 
-void Compiler::invokePrefixRule() {
+void Compiler::invokePrefixRule(bool canAssign) {
   // Q: should I be throwing errors instead of breaking if
   // switch matches an 'unexpected' token (but not via the default case)?
   switch (previous.type) {
@@ -160,7 +167,7 @@ void Compiler::invokePrefixRule() {
     case TOKEN_GREATER_EQUAL: break;
     case TOKEN_LESS: break;
     case TOKEN_LESS_EQUAL: break;
-    case TOKEN_IDENTIFIER: variable(); break;
+    case TOKEN_IDENTIFIER: variable(canAssign); break;
     case TOKEN_STRING: string(); break;
     case TOKEN_NUMBER: number(); break;
     case TOKEN_AND: break;
@@ -186,7 +193,7 @@ void Compiler::invokePrefixRule() {
 }
 
 // Q: could this be refactored to use a map or other data structure that stores functions?
-void Compiler::invokeInfixRule() {
+void Compiler::invokeInfixRule(bool canAssign) {
   switch (previous.type) {
     case TOKEN_MINUS:
     case TOKEN_PLUS:
@@ -259,26 +266,39 @@ void Compiler::string() {
   emitConstant(Value(copyString()));
 }
 
-void Compiler::variable() {
-  namedVariable();
+void Compiler::variable(bool canAssign) {
+  namedVariable(canAssign);
 }
 
-void Compiler::namedVariable() {
+void Compiler::namedVariable(bool canAssign) {
   uint8_t arg = identifierConstant();
-  emitBytes(OP_GET_GLOBAL, arg);
+
+  if (canAssign && match(TOKEN_EQUAL)) {
+    expression();
+    emitBytes(OP_SET_GLOBAL, arg);
+  } else {
+    emitBytes(OP_GET_GLOBAL, arg);
+  }
 }
 
 StringObject* Compiler::copyString() {
   // Q: how can I make sure that stringObject gets deleted and memory gets freed at the right time?
   //StringObject* stringObject = new StringObject(previous.lexeme);
 
-  std::unordered_map<std::string, Value>::iterator it = strings.find(previous.lexeme);
-  if (it == strings.end()) {
+  std::unordered_map<std::string, Value>::iterator tempIt;
+  std::cout << "\nAll the strings in the strings map:" << '\n';
+  for (tempIt = strings->begin(); tempIt != strings->end(); ++tempIt) {
+    std::cout << tempIt->first << '\n';
+  }
+  std::cout << '\n';
+
+  std::unordered_map<std::string, Value>::iterator it = strings->find(previous.lexeme);
+  if (it == strings->end()) {
     StringObject* stringObject = new StringObject(previous.lexeme);
     (*stringObject).setNext(objects);
     objects = stringObject;
     //strings.insert(std::make_pair(stringObject, Value{ VAL_NULL }));
-    strings.insert(std::make_pair(previous.lexeme, Value{ stringObject }));
+    strings->insert(std::make_pair(previous.lexeme, Value{ stringObject }));
 
     return stringObject;
   }

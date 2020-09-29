@@ -35,7 +35,7 @@ class Compiler {
   Chunk* compilingChunk;
   Object* objects;
   //std::unordered_map<StringObject*, Value> strings;
-  std::unordered_map<std::string, Value> strings;
+  std::unordered_map<std::string, Value> *strings;
   Token current;
   Token previous;
   int currentTokenIndex{ 0 };
@@ -93,8 +93,8 @@ class Compiler {
   void binary();
   void literal();
   void declaration();
-  void variable();
-  void namedVariable();
+  void variable(bool canAssign);
+  void namedVariable(bool canAssign);
   void varDeclaration();
   uint8_t parseVariable(const std::string &errorMessage);
   uint8_t identifierConstant();
@@ -108,8 +108,8 @@ class Compiler {
   void string();
   StringObject* copyString();
   void* reallocate(void* pointer, size_t oldSize, size_t newSize); // Q: Where's the best place for this function to reside?
-  void invokePrefixRule();
-  void invokeInfixRule();
+  void invokePrefixRule(bool canAssign);
+  void invokeInfixRule(bool canAssign);
   void parsePrecedence(Precedence precedence);
   void emitByte(uint8_t byte);
   void emitBytes(uint8_t byte1, uint8_t byte2);
@@ -126,7 +126,7 @@ public:
   // See: https://stackoverflow.com/questions/10240161/reason-to-pass-a-pointer-by-reference-in-c
   // Q: better way to pass strings? Is it fine that caller doesn't know that it's being passed by reference?
   Compiler(const std::vector<Token> tokens, Chunk *chunk,
-           Object *&objects, std::unordered_map<std::string, Value> &strings);
+           Object *&objects, std::unordered_map<std::string, Value> *strings);
 
   bool compile();
 };
