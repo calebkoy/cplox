@@ -8,8 +8,9 @@
 // Q: should I be using smart pointers and/or move semantics here
 // to ensure that there are no memory leaks?
 // See https://stackoverflow.com/questions/7575459/c-should-i-initialize-pointer-members-that-are-assigned-to-in-the-constructor
-Compiler::Compiler(const std::vector<Token> tokens, Chunk *chunk, Object *&objects) :
-  tokens{ tokens }, chunk{ chunk }, compilingChunk{ chunk }, objects{ objects } {
+Compiler::Compiler(const std::vector<Token> tokens, Chunk *chunk,
+                   Object *&objects, std::unordered_map<StringObject*, Value> &strings) :
+  tokens{ tokens }, chunk{ chunk }, compilingChunk{ chunk }, objects{ objects }, strings{ strings } {
 }
 
 bool Compiler::compile() {
@@ -163,10 +164,6 @@ void Compiler::literal() {
 }
 
 void Compiler::string() {
-  //StringObject object = StringObject{ previous.lexeme };
-  //std::unique_ptr<StringObject> stringObject{ new StringObject{ previous.lexeme } };
-  //auto stringObject{ std::make_unique<StringObject>(previous.lexeme) };
-  //emitConstant(Value{ std::make_unique<StringObject>(previous.lexeme) });
   emitConstant(Value(copyString()));
 }
 
@@ -174,6 +171,7 @@ StringObject* Compiler::copyString() {
   // Q: how can I make sure that stringObject gets deleted and memory gets freed at the right time?
   StringObject* stringObject = new StringObject(previous.lexeme);
   (*stringObject).setNext(objects);
+  strings.insert(std::make_pair(stringObject, Value{ VAL_NULL }));
   objects = stringObject;
   return stringObject;
 }

@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <unordered_map>
 
 #include "compiler.h"
 #include "scanner.h"
@@ -103,10 +104,12 @@ InterpretResult Tone::interpret(const std::string& source) {
 //  }
 
   Object* objects = nullptr;
+  std::unordered_map<StringObject*, Value> strings;
   Chunk chunk;
 
   // Q: better way to pass objects pointer?
-  Compiler compiler{ tokens, &chunk, objects };
+  // Q: better way to pass unordered map?
+  Compiler compiler{ tokens, &chunk, objects, strings };
   if (!compiler.compile()) {
     return INTERPRET_COMPILATION_ERROR;
   }

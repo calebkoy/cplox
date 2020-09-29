@@ -31,6 +31,8 @@ Value::Value(ValueType type, double number = 0) {
     }
   } else if (type == VAL_NUMBER) {
     as.number = number;
+  } else if (type == VAL_NULL) {
+    as.number = 0;
   }
 
   // Q: what if someone passes in VAL_OBJ?

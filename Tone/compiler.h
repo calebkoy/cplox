@@ -34,6 +34,7 @@ class Compiler {
   Chunk* chunk;
   Chunk* compilingChunk;
   Object* objects;
+  std::unordered_map<StringObject*, Value> strings;
   Token current;
   Token previous;
   int currentTokenIndex{ 0 };
@@ -109,7 +110,9 @@ public:
   // Q: how should Chunk be passed?
   // Q: how should objects be passed? Is reference fine, or should it be a double pointer?
   // See: https://stackoverflow.com/questions/10240161/reason-to-pass-a-pointer-by-reference-in-c
-  Compiler(const std::vector<Token> tokens, Chunk *chunk, Object *&objects);
+  // Q: better way to pass strings? Is it fine that caller doesn't know that it's being passed by reference?
+  Compiler(const std::vector<Token> tokens, Chunk *chunk,
+           Object *&objects, std::unordered_map<StringObject*, Value> &strings);
 
   bool compile();
 };

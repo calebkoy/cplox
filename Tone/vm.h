@@ -1,8 +1,11 @@
 #ifndef VM_H
 #define VM_H
 
+#include <unordered_map>
+
 #include "chunk.h"
 #include "stack.h"
+#include "value.h"
 
 enum InterpretResult {
   INTERPRET_OK,
@@ -14,6 +17,7 @@ class VM {
   Chunk chunk;
   int programCounter{ 0 };
   Stack stack;
+  std::unordered_map<std::string, ValueType> strings;
 
   // Q: is there a better, more C++ way of keeping track of the list of
   // heap allocated objects?
