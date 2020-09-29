@@ -31,6 +31,7 @@ InterpretResult VM::run() {
       case OP_NULL: stack.push(Value{ VAL_NULL, 0 }); break;
       case OP_TRUE: stack.push(Value{ true }); break;
       case OP_FALSE: stack.push(Value{ false }); break;
+      case OP_POP: stack.pop(); break;
       case OP_EQUAL: {
         Value b = stack.pop();
         Value a = stack.pop();

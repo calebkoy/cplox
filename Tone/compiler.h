@@ -94,6 +94,7 @@ class Compiler {
   void declaration();
   void statement();
   void printStatement();
+  void expressionStatement();
   bool match(TokenType type);
   bool check(TokenType type);
   void string();

@@ -40,6 +40,8 @@ void Compiler::declaration() {
 void Compiler::statement() {
   if (match(TOKEN_PRINT)) {
     printStatement();
+  } else {
+    expressionStatement();
   }
 }
 
@@ -47,6 +49,12 @@ void Compiler::printStatement() {
   expression();
   consume(TOKEN_SEMICOLON, "Expect ';' after value.");
   emitByte(OP_PRINT);
+}
+
+void Compiler::expressionStatement() {
+  expression();
+  consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
+  emitByte(OP_POP);
 }
 
 bool Compiler::match(TokenType type) {
