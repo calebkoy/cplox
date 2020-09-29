@@ -15,21 +15,35 @@ class VM {
   int programCounter{ 0 };
   Stack stack;
 
+  // Q: is there a better, more C++ way of keeping track of the list of
+  // heap allocated objects?
+  Object* objects;
+
   uint8_t readByte();
   Value readConstant();
   void add();
   void subtract();
   void divide();
   void multiply();
+  void greaterThan();
+  void lessThan();
 
   // Q: how can I write this so it's handled by ErrorReporter?
   // Q: does this need to be variadic?
   void runtimeError(const char* format, ...);
 
+  // todo: put this in the class that should own it (maybe in Value, by overriding
+  // ==)
+  bool valuesEqual(Value a, Value b);
+
 public:
-  VM(Chunk chunk);
+  // Q: how should Chunk be passed?
+  VM(Chunk chunk, Object* objects);
   InterpretResult interpret();
   InterpretResult run();
+
+  // Q: who should own this method?
+  void freeObjects();
 };
 
 #endif // VM_H

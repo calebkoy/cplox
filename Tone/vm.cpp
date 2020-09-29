@@ -5,7 +5,7 @@
 
 #define DEBUG_TRACE_EXECUTION
 
-VM::VM(Chunk chunk) : chunk{ chunk } {}
+VM::VM(Chunk chunk, Object* objects) : chunk{ chunk }, objects{ objects } {}
 
 // Q: is this needed?
 InterpretResult VM::interpret() {
@@ -31,12 +31,40 @@ InterpretResult VM::run() {
       case OP_NULL: stack.push(Value{ VAL_NULL, 0 }); break;
       case OP_TRUE: stack.push(Value{ true }); break;
       case OP_FALSE: stack.push(Value{ false }); break;
-      case OP_ADD:
+      case OP_EQUAL: {
+        Value b = stack.pop();
+        Value a = stack.pop();
+        stack.push(Value{ valuesEqual(a, b) });
+        break;
+      }
+      case OP_GREATER:
         if (!stack.peek(0).isNumber() || !stack.peek(1).isNumber()) {
           runtimeError("Operands must be numbers.");
           return INTERPRET_RUNTIME_ERROR;
         }
-        add();
+        greaterThan();
+        break;
+      case OP_LESS:
+        if (!stack.peek(0).isNumber() || !stack.peek(1).isNumber()) {
+          runtimeError("Operands must be numbers.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        lessThan();
+        break;
+      case OP_ADD:
+        if (stack.peek(0).isString() && stack.peek(1).isString()) {
+          StringObject* b = stack.pop().asString();
+          StringObject* a = stack.pop().asString();
+
+          // Q: how do I ensure that memory isn't leaked here and around here?
+          StringObject* result = new StringObject((*b).getChars() + (*a).getChars());
+          stack.push(Value{ result });
+        } else if (stack.peek(0).isNumber() && stack.peek(1).isNumber()) {
+          add();
+        } else {
+          runtimeError("Operands must be numbers.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
         break;
       case OP_SUBTRACT:
         if (!stack.peek(0).isNumber() || !stack.peek(1).isNumber()) {
@@ -58,6 +86,9 @@ InterpretResult VM::run() {
           return INTERPRET_RUNTIME_ERROR;
         }
         multiply();
+        break;
+      case OP_NOT:
+        stack.push(Value{ stack.pop().isFalsey() });
         break;
       case OP_NEGATE: {
         if (!stack.peek(0).isNumber()) {
@@ -109,6 +140,18 @@ void VM::multiply() {
   stack.push(Value{ VAL_NUMBER, a * b });
 }
 
+void VM::greaterThan() {
+  double b = stack.pop().asNumber();
+  double a = stack.pop().asNumber();
+  stack.push(Value{ a > b });
+}
+
+void VM::lessThan() {
+  double b = stack.pop().asNumber();
+  double a = stack.pop().asNumber();
+  stack.push(Value{ a < b });
+}
+
 void VM::runtimeError(const char* format, ...) {
   va_list args;
   va_start(args, format);
@@ -120,4 +163,35 @@ void VM::runtimeError(const char* format, ...) {
   std::cerr << "[line " << line << "] in script\n";
 
   stack.reset();
+}
+
+bool VM::valuesEqual(Value a, Value b) {
+  if (a.getType() != b.getType()) return false;
+
+  switch (a.getType()) {
+    case VAL_BOOL:   return a.asBool() == b.asBool();
+    case VAL_NULL:    return true;
+    case VAL_NUMBER: return a.asNumber() == b.asNumber();
+    case VAL_OBJECT: {
+      StringObject* aString = a.asString();
+      StringObject* bString = b.asString();
+
+      return (*aString).getChars().compare((*bString).getChars()) == 0;
+    }
+    default:
+      return false;
+  }
+}
+
+// Q: do you ensure you free all types of objects that might still be lingering in memory
+// when the VM finishes running?
+void VM::freeObjects() {
+  Object* object = objects;
+
+  // Q: should this be nullptr or is NULL fine?
+  while (object != NULL) {
+    Object* next = object->getNext();
+    free(object);
+    object = next;
+  }
 }

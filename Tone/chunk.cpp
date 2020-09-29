@@ -36,6 +36,12 @@ int Chunk::disassembleInstruction(int offset) {
       return disassembleSimpleInstruction("OP_TRUE", offset);
     case OP_FALSE:
       return disassembleSimpleInstruction("OP_FALSE", offset);
+    case OP_EQUAL:
+      return disassembleSimpleInstruction("OP_EQUAL", offset);
+    case OP_GREATER:
+      return disassembleSimpleInstruction("OP_GREATER", offset);
+    case OP_LESS:
+      return disassembleSimpleInstruction("OP_LESS", offset);
     case OP_ADD:
       return disassembleSimpleInstruction("OP_ADD", offset);
     case OP_SUBTRACT:
@@ -44,6 +50,8 @@ int Chunk::disassembleInstruction(int offset) {
       return disassembleSimpleInstruction("OP_MULTIPLY", offset);
     case OP_DIVIDE:
       return disassembleSimpleInstruction("OP_DIVIDE", offset);
+    case OP_NOT:
+      return disassembleSimpleInstruction("OP_NOT", offset);
     case OP_NEGATE:
       return disassembleSimpleInstruction("OP_NEGATE", offset);
     case OP_RETURN:

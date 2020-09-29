@@ -1,4 +1,5 @@
 #include <iostream>
+#include <memory>
 
 #include "compiler.h"
 
@@ -7,8 +8,8 @@
 // Q: should I be using smart pointers and/or move semantics here
 // to ensure that there are no memory leaks?
 // See https://stackoverflow.com/questions/7575459/c-should-i-initialize-pointer-members-that-are-assigned-to-in-the-constructor
-Compiler::Compiler(const std::vector<Token> tokens, Chunk *chunk) :
-  tokens{ tokens }, chunk{ chunk }, compilingChunk{ chunk } {
+Compiler::Compiler(const std::vector<Token> tokens, Chunk *chunk, Object *&objects) :
+  tokens{ tokens }, chunk{ chunk }, compilingChunk{ chunk }, objects{ objects } {
 }
 
 bool Compiler::compile() {
@@ -58,7 +59,7 @@ void Compiler::invokePrefixRule() {
     case TOKEN_SEMICOLON: break;
     case TOKEN_SLASH: break;
     case TOKEN_STAR: break;
-    case TOKEN_BANG: break;
+    case TOKEN_BANG: unary(); break;
     case TOKEN_BANG_EQUAL: break;
     case TOKEN_EQUAL: break;
     case TOKEN_EQUAL_EQUAL: break;
@@ -67,7 +68,7 @@ void Compiler::invokePrefixRule() {
     case TOKEN_LESS: break;
     case TOKEN_LESS_EQUAL: break;
     case TOKEN_IDENTIFIER: break;
-    case TOKEN_STRING: break;
+    case TOKEN_STRING: string(); break;
     case TOKEN_NUMBER: number(); break;
     case TOKEN_AND: break;
     case TOKEN_CLASS: break;
@@ -97,8 +98,15 @@ void Compiler::invokeInfixRule() {
     case TOKEN_MINUS:
     case TOKEN_PLUS:
     case TOKEN_SLASH:
-    case TOKEN_STAR: binary();
-                     break;
+    case TOKEN_STAR:
+    case TOKEN_BANG_EQUAL:
+    case TOKEN_EQUAL_EQUAL:
+    case TOKEN_GREATER:
+    case TOKEN_GREATER_EQUAL:
+    case TOKEN_LESS:
+    case TOKEN_LESS_EQUAL:
+      binary();
+      break;
 
     case TOKEN_LEFT_PAREN:
     case TOKEN_RIGHT_PAREN:
@@ -108,13 +116,7 @@ void Compiler::invokeInfixRule() {
     case TOKEN_DOT:
     case TOKEN_SEMICOLON:
     case TOKEN_BANG:
-    case TOKEN_BANG_EQUAL:
     case TOKEN_EQUAL:
-    case TOKEN_EQUAL_EQUAL:
-    case TOKEN_GREATER:
-    case TOKEN_GREATER_EQUAL:
-    case TOKEN_LESS:
-    case TOKEN_LESS_EQUAL:
     case TOKEN_IDENTIFIER:
     case TOKEN_STRING:
     case TOKEN_NUMBER:
@@ -160,6 +162,34 @@ void Compiler::literal() {
   }
 }
 
+void Compiler::string() {
+  //StringObject object = StringObject{ previous.lexeme };
+  //std::unique_ptr<StringObject> stringObject{ new StringObject{ previous.lexeme } };
+  //auto stringObject{ std::make_unique<StringObject>(previous.lexeme) };
+  //emitConstant(Value{ std::make_unique<StringObject>(previous.lexeme) });
+  emitConstant(Value(copyString()));
+}
+
+StringObject* Compiler::copyString() {
+  // Q: how can I make sure that stringObject gets deleted and memory gets freed at the right time?
+  StringObject* stringObject = new StringObject(previous.lexeme);
+  (*stringObject).setNext(objects);
+  objects = stringObject;
+  return stringObject;
+}
+
+// Q: is this function necessary?
+void* Compiler::reallocate(void* pointer, size_t oldSize, size_t newSize) {
+  if (newSize == 0) {
+    free(pointer);
+    return NULL;
+  }
+
+  void* result = realloc(pointer, newSize);
+  if (result == NULL) exit(1); // Q: can I do something better than exit(1)?
+  return result;
+}
+
 // Q: should this class be passed by value?
 void Compiler::emitConstant(Value value) {
   emitBytes(OP_CONSTANT, makeConstant(value));
@@ -195,6 +225,7 @@ void Compiler::unary() {
   TokenType operatorType = previous.type;
   parsePrecedence(PRECEDENCE_UNARY);
   switch (operatorType) {
+    case TOKEN_BANG: emitByte(OP_NOT); break;
     case TOKEN_MINUS: emitByte(OP_NEGATE); break;
     default:
       return;
@@ -206,6 +237,12 @@ void Compiler::binary() {
   Precedence precedence = tokenPrecedence[operatorType];
   parsePrecedence((Precedence)(precedence + 1));
   switch (operatorType) {
+    case TOKEN_BANG_EQUAL:    emitBytes(OP_EQUAL, OP_NOT); break;
+    case TOKEN_EQUAL_EQUAL:   emitByte(OP_EQUAL); break;
+    case TOKEN_GREATER:       emitByte(OP_GREATER); break;
+    case TOKEN_GREATER_EQUAL: emitBytes(OP_LESS, OP_NOT); break;
+    case TOKEN_LESS:          emitByte(OP_LESS); break;
+    case TOKEN_LESS_EQUAL:    emitBytes(OP_GREATER, OP_NOT); break;
     case TOKEN_PLUS:          emitByte(OP_ADD); break;
     case TOKEN_MINUS:         emitByte(OP_SUBTRACT); break;
     case TOKEN_STAR:          emitByte(OP_MULTIPLY); break;

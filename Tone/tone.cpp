@@ -102,12 +102,18 @@ InterpretResult Tone::interpret(const std::string& source) {
 //    std::cout << token.type << " " << source.substr(token.start, token.length) << '\n';
 //  }
 
+  Object* objects = nullptr;
   Chunk chunk;
-  Compiler compiler{ tokens, &chunk };
+
+  // Q: better way to pass objects pointer?
+  Compiler compiler{ tokens, &chunk, objects };
   if (!compiler.compile()) {
     return INTERPRET_COMPILATION_ERROR;
   }
 
-  VM vm{ chunk };
-  return vm.run();
+  VM vm{ chunk, objects };
+  InterpretResult result = vm.run();
+  vm.freeObjects();
+
+  return result;
 }

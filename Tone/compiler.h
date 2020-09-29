@@ -33,6 +33,7 @@ class Compiler {
   const std::vector<Token> tokens;
   Chunk* chunk;
   Chunk* compilingChunk;
+  Object* objects;
   Token current;
   Token previous;
   int currentTokenIndex{ 0 };
@@ -51,13 +52,13 @@ class Compiler {
     {TOKEN_SLASH, PRECEDENCE_FACTOR},
     {TOKEN_STAR, PRECEDENCE_FACTOR},
     {TOKEN_BANG, PRECEDENCE_NONE},
-    {TOKEN_BANG_EQUAL, PRECEDENCE_NONE},
+    {TOKEN_BANG_EQUAL, PRECEDENCE_EQUALITY},
     {TOKEN_EQUAL, PRECEDENCE_NONE},
-    {TOKEN_EQUAL_EQUAL, PRECEDENCE_NONE},
-    {TOKEN_GREATER, PRECEDENCE_NONE},
-    {TOKEN_GREATER_EQUAL, PRECEDENCE_NONE},
-    {TOKEN_LESS, PRECEDENCE_NONE},
-    {TOKEN_LESS_EQUAL, PRECEDENCE_NONE},
+    {TOKEN_EQUAL_EQUAL, PRECEDENCE_EQUALITY},
+    {TOKEN_GREATER, PRECEDENCE_COMPARISON},
+    {TOKEN_GREATER_EQUAL, PRECEDENCE_COMPARISON},
+    {TOKEN_LESS, PRECEDENCE_COMPARISON},
+    {TOKEN_LESS_EQUAL, PRECEDENCE_COMPARISON},
     {TOKEN_IDENTIFIER, PRECEDENCE_NONE},
     {TOKEN_STRING, PRECEDENCE_NONE},
     {TOKEN_NUMBER, PRECEDENCE_NONE},
@@ -89,6 +90,9 @@ class Compiler {
   void unary();
   void binary();
   void literal();
+  void string();
+  StringObject* copyString();
+  void* reallocate(void* pointer, size_t oldSize, size_t newSize); // Q: Where's the best place for this function to reside?
   void invokePrefixRule();
   void invokeInfixRule();
   void parsePrecedence(Precedence precedence);
@@ -102,7 +106,10 @@ class Compiler {
   void error(const std::string &message);
   void errorAt(Token token, const std::string &message);
 public:
-  Compiler(const std::vector<Token> tokens, Chunk *chunk); // Q: how should Chunk be passed?
+  // Q: how should Chunk be passed?
+  // Q: how should objects be passed? Is reference fine, or should it be a double pointer?
+  // See: https://stackoverflow.com/questions/10240161/reason-to-pass-a-pointer-by-reference-in-c
+  Compiler(const std::vector<Token> tokens, Chunk *chunk, Object *&objects);
 
   bool compile();
 };
