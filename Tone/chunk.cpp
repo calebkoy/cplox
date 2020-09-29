@@ -54,6 +54,8 @@ int Chunk::disassembleInstruction(int offset) {
       return disassembleSimpleInstruction("OP_NOT", offset);
     case OP_NEGATE:
       return disassembleSimpleInstruction("OP_NEGATE", offset);
+    case OP_PRINT:
+      return disassembleSimpleInstruction("OP_PRINT", offset);
     case OP_RETURN:
       return disassembleSimpleInstruction("OP_RETURN", offset);
     default:

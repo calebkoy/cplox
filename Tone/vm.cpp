@@ -100,8 +100,13 @@ InterpretResult VM::run() {
         stack.push(Value{ VAL_NUMBER, negatedValue });
         break;
       }
-      case OP_RETURN: {
+      case OP_PRINT: {
         std::cout << stack.pop() << '\n';
+        break;
+      }
+
+      case OP_RETURN: {
+        // Exit interpreter.
         return INTERPRET_OK;
       }
     }

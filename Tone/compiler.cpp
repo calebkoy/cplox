@@ -15,8 +15,9 @@ Compiler::Compiler(const std::vector<Token> tokens, Chunk *chunk,
 
 bool Compiler::compile() {
   advance();
-  expression();
-  consume(TOKEN_EOF, "Expect EOF token at end of expression.");
+  while (!match(TOKEN_EOF)) {
+    declaration();
+  }
   endCompiler();
   return !hadError;
 }
@@ -30,6 +31,34 @@ void Compiler::advance() {
 
     errorAtCurrent(current.lexeme);
   }
+}
+
+void Compiler::declaration() {
+  statement();
+}
+
+void Compiler::statement() {
+  if (match(TOKEN_PRINT)) {
+    printStatement();
+  }
+}
+
+void Compiler::printStatement() {
+  expression();
+  consume(TOKEN_SEMICOLON, "Expect ';' after value.");
+  emitByte(OP_PRINT);
+}
+
+bool Compiler::match(TokenType type) {
+  if (type == TOKEN_EOF && check(type)) return true;
+
+  if (!check(type)) return false;
+  advance();
+  return true;
+}
+
+bool Compiler::check(TokenType type) {
+  return current.type == type;
 }
 
 void Compiler::expression() {

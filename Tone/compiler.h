@@ -91,6 +91,11 @@ class Compiler {
   void unary();
   void binary();
   void literal();
+  void declaration();
+  void statement();
+  void printStatement();
+  bool match(TokenType type);
+  bool check(TokenType type);
   void string();
   StringObject* copyString();
   void* reallocate(void* pointer, size_t oldSize, size_t newSize); // Q: Where's the best place for this function to reside?
