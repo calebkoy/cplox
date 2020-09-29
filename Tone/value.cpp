@@ -40,19 +40,19 @@ Value::Value(ValueType type, double number = 0) {
   this->type = type;
 }
 
-bool Value::asBool() {
+bool Value::asBool() const {
   return as.boolean;
 }
 
-double Value::asNumber() {
+double Value::asNumber() const {
   return as.number;
 }
 
-Object* Value::asObject() {
+Object* Value::asObject() const {
   return as.object;
 }
 
-StringObject* Value::asString() {
+StringObject* Value::asString() const {
   // Q: what to do if the Value doesn't contain
   // a pointer to a valid ObjString on the heap?
   return (StringObject*)asObject();
@@ -70,11 +70,11 @@ bool Value::isNumber() {
   return type == VAL_NUMBER;
 }
 
-bool Value::isObject() {
+bool Value::isObject() const {
   return type == VAL_OBJECT;
 }
 
-bool Value::isString() {
+bool Value::isString() const {
   // Q: should some/all of this functionality belong to class Object?
   return isObject() && asObject()->getType() == OBJECT_STRING;
 }

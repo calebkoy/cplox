@@ -38,27 +38,38 @@ public:
   Value(Object* object);
   Value(ValueType type, double number);
 
-  bool asBool();
-  double asNumber();
-  Object* asObject();
-  StringObject* asString();
+  bool asBool() const;
+  double asNumber() const;
+  Object* asObject() const;
+  StringObject* asString() const;
 
   bool isBool();
   bool isNull();
   bool isNumber();
-  bool isObject();
-  bool isString();
+  bool isObject() const;
+  bool isString() const;
   bool isFalsey();
   ValueType getType();
   ObjectType getObjectType();
   friend std::ostream& operator<<(std::ostream& out, const Value &value) {
     switch (value.type) {
       case VAL_BOOL:
-        value.as.boolean ? out << "true" : out << "false";
+        value.asBool() ? out << "true" : out << "false";
         break;
       case VAL_NULL: out << "null"; break;
-      case VAL_NUMBER: out << value.as.number; break;
-      case VAL_OBJECT: out << value.as.object; break;
+      case VAL_NUMBER: out << value.asNumber(); break;
+
+      // Q: what's the cleaner way to do this using inheritance
+      // and/or polymorphism?
+      case VAL_OBJECT:
+        if (value.isString()) {
+          out << *(value.asString());
+        } else {
+          // Q: related to the above question:
+          // What, if anything, should be done here?
+          //out << *(value.asObject());
+        }
+         break;
       default: break; // Q: should this be handled differently?
     }
 

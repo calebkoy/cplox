@@ -9,7 +9,7 @@
 // to ensure that there are no memory leaks?
 // See https://stackoverflow.com/questions/7575459/c-should-i-initialize-pointer-members-that-are-assigned-to-in-the-constructor
 Compiler::Compiler(const std::vector<Token> tokens, Chunk *chunk,
-                   Object *&objects, std::unordered_map<StringObject*, Value> &strings) :
+                   Object *&objects, std::unordered_map<std::string, Value> &strings) :
   tokens{ tokens }, chunk{ chunk }, compilingChunk{ chunk }, objects{ objects }, strings{ strings } {
 }
 
@@ -34,7 +34,35 @@ void Compiler::advance() {
 }
 
 void Compiler::declaration() {
-  statement();
+  if (match(TOKEN_VAR)) {
+    varDeclaration();
+  } else {
+    statement();
+  }
+
+  if (panicMode) synchronise();
+}
+
+void Compiler::varDeclaration() {
+  uint8_t global = parseVariable("Expect variable name.");
+
+  if (match(TOKEN_EQUAL)) {
+    expression();
+  } else {
+    emitByte(OP_NULL);
+  }
+  consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+
+  defineVariable(global);
+}
+
+uint8_t Compiler::parseVariable(const std::string &errorMessage) {
+  consume(TOKEN_IDENTIFIER, errorMessage);
+  return identifierConstant(); // Q: is passing a pointer to the token the best?
+}
+
+uint8_t Compiler::identifierConstant() {
+  return makeConstant(Value(copyString()));
 }
 
 void Compiler::statement() {
@@ -42,6 +70,33 @@ void Compiler::statement() {
     printStatement();
   } else {
     expressionStatement();
+  }
+}
+
+void Compiler::synchronise() {
+  panicMode = false;
+
+  while (current.type != TOKEN_EOF) {
+    if (previous.type == TOKEN_SEMICOLON) return;
+
+    switch (current.type) {
+      case TOKEN_CLASS:
+      case TOKEN_FUNCTION:
+      case TOKEN_VAR:
+      case TOKEN_FOR:
+      case TOKEN_IF:
+      case TOKEN_WHILE:
+      case TOKEN_PRINT:
+      case TOKEN_RETURN:
+        return;
+
+      default:
+        // Q: should there be a break here, for cleanliness?
+        // Do nothing.
+        ;
+    }
+
+    advance();
   }
 }
 
@@ -105,7 +160,7 @@ void Compiler::invokePrefixRule() {
     case TOKEN_GREATER_EQUAL: break;
     case TOKEN_LESS: break;
     case TOKEN_LESS_EQUAL: break;
-    case TOKEN_IDENTIFIER: break;
+    case TOKEN_IDENTIFIER: variable(); break;
     case TOKEN_STRING: string(); break;
     case TOKEN_NUMBER: number(); break;
     case TOKEN_AND: break;
@@ -204,13 +259,31 @@ void Compiler::string() {
   emitConstant(Value(copyString()));
 }
 
+void Compiler::variable() {
+  namedVariable();
+}
+
+void Compiler::namedVariable() {
+  uint8_t arg = identifierConstant();
+  emitBytes(OP_GET_GLOBAL, arg);
+}
+
 StringObject* Compiler::copyString() {
   // Q: how can I make sure that stringObject gets deleted and memory gets freed at the right time?
-  StringObject* stringObject = new StringObject(previous.lexeme);
-  (*stringObject).setNext(objects);
-  strings.insert(std::make_pair(stringObject, Value{ VAL_NULL }));
-  objects = stringObject;
-  return stringObject;
+  //StringObject* stringObject = new StringObject(previous.lexeme);
+
+  std::unordered_map<std::string, Value>::iterator it = strings.find(previous.lexeme);
+  if (it == strings.end()) {
+    StringObject* stringObject = new StringObject(previous.lexeme);
+    (*stringObject).setNext(objects);
+    objects = stringObject;
+    //strings.insert(std::make_pair(stringObject, Value{ VAL_NULL }));
+    strings.insert(std::make_pair(previous.lexeme, Value{ stringObject }));
+
+    return stringObject;
+  }
+
+  return (it->second).asString(); // Q: are parentheses necessary?
 }
 
 // Q: is this function necessary?
@@ -238,6 +311,10 @@ uint8_t Compiler::makeConstant(Value value) {
   }
 
   return (uint8_t)constant;
+}
+
+void Compiler::defineVariable(uint8_t global) {
+  emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
 void Compiler::consume(TokenType type, const std::string &message) {

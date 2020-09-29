@@ -5,6 +5,11 @@
 
 #define DEBUG_TRACE_EXECUTION
 
+VM::VM() {
+  chunk = Chunk();
+  objects = nullptr;
+}
+
 VM::VM(Chunk chunk, Object* objects) : chunk{ chunk }, objects{ objects } {}
 
 // Q: is this needed?
@@ -32,6 +37,25 @@ InterpretResult VM::run() {
       case OP_TRUE: stack.push(Value{ true }); break;
       case OP_FALSE: stack.push(Value{ false }); break;
       case OP_POP: stack.pop(); break;
+      case OP_GET_GLOBAL: {
+        StringObject* name = readString();
+        Value value;
+        std::unordered_map<std::string, Value>::iterator it = globals.find(name->getChars());
+        if (it == globals.end()) {
+          runtimeError("Undefined variable '%s'.", name->getChars().c_str());
+          return INTERPRET_RUNTIME_ERROR;
+        } else {
+          value = it->second;
+        }
+        stack.push(value);
+        break;
+      }
+      case OP_DEFINE_GLOBAL: {
+        StringObject* name = readString();
+        globals.insert(std::make_pair(name->getChars(), stack.peek(0)));
+        stack.pop();
+        break;
+      }
       case OP_EQUAL: {
         Value b = stack.pop();
         Value a = stack.pop();
@@ -58,7 +82,7 @@ InterpretResult VM::run() {
           StringObject* a = stack.pop().asString();
 
           // Q: how do I ensure that memory isn't leaked here and around here?
-          StringObject* result = new StringObject((*b).getChars() + (*a).getChars());
+          StringObject* result = new StringObject((*a).getChars() + (*b).getChars());
           stack.push(Value{ result });
         } else if (stack.peek(0).isNumber() && stack.peek(1).isNumber()) {
           add();
@@ -120,6 +144,10 @@ uint8_t VM::readByte() {
 
 Value VM::readConstant() {
   return chunk.getConstants().at(readByte());
+}
+
+StringObject* VM::readString() {
+  return readConstant().asString();
 }
 
 void VM::add() {
@@ -200,4 +228,16 @@ void VM::freeObjects() {
     free(object);
     object = next;
   }
+}
+
+void VM::setChunk(Chunk chunk) {
+  this->chunk = chunk;
+}
+
+void VM::setObjects(Object* objects) {
+  this->objects = objects;
+}
+
+void VM::resetProgramCounter() {
+  programCounter = 0;
 }

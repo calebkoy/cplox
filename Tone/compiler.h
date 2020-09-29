@@ -34,7 +34,8 @@ class Compiler {
   Chunk* chunk;
   Chunk* compilingChunk;
   Object* objects;
-  std::unordered_map<StringObject*, Value> strings;
+  //std::unordered_map<StringObject*, Value> strings;
+  std::unordered_map<std::string, Value> strings;
   Token current;
   Token previous;
   int currentTokenIndex{ 0 };
@@ -92,9 +93,16 @@ class Compiler {
   void binary();
   void literal();
   void declaration();
+  void variable();
+  void namedVariable();
+  void varDeclaration();
+  uint8_t parseVariable(const std::string &errorMessage);
+  uint8_t identifierConstant();
+  void defineVariable(uint8_t global);
   void statement();
   void printStatement();
   void expressionStatement();
+  void synchronise();
   bool match(TokenType type);
   bool check(TokenType type);
   void string();
@@ -118,7 +126,7 @@ public:
   // See: https://stackoverflow.com/questions/10240161/reason-to-pass-a-pointer-by-reference-in-c
   // Q: better way to pass strings? Is it fine that caller doesn't know that it's being passed by reference?
   Compiler(const std::vector<Token> tokens, Chunk *chunk,
-           Object *&objects, std::unordered_map<StringObject*, Value> &strings);
+           Object *&objects, std::unordered_map<std::string, Value> &strings);
 
   bool compile();
 };

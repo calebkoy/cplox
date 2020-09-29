@@ -8,6 +8,12 @@
 
 void Tone::repl() {
   std::string line;
+  Object* objects = nullptr;
+
+  // Q: does 'string interning' provide any value to Tone?
+  // If not, remove the strings map.
+  std::unordered_map<std::string, Value> strings;
+
   for (;;) {
     std::cout << ">> ";
 
@@ -18,8 +24,10 @@ void Tone::repl() {
     }
 
 //    std::cout << line << '\n'; // Temp
-     interpret(line);
+     interpret(line, objects, strings);
   }
+
+  vm.freeObjects();
 }
 
 void Tone::runFile(const char *path) {
@@ -36,9 +44,20 @@ void Tone::runFile(const char *path) {
   file.seekg(0);
   file.read(&source[0], size);
 
-  // std::cout << source << '\n'; // Temp
-  interpret(source);
-  // If there's been a compilation or runtime error, exit w/ appropriate exit code
+  Object* objects = nullptr;
+
+  // Q: does 'string interning' provide any value to Tone?
+  // If not, remove the strings map.
+  // Q: is it fine to leave this uninitialised?
+  std::unordered_map<std::string, Value> strings;
+
+  // Todo: refactor use of strings in both repl and runFile
+
+  interpret(source, objects, strings);
+
+  // Todo: If there's been a compilation or runtime error, exit w/ appropriate exit code
+
+  vm.freeObjects();
 }
 
 std::ostream& operator<<(std::ostream& out, TokenType type) {
@@ -92,7 +111,8 @@ std::ostream& operator<<(std::ostream& out, TokenType type) {
   return out << s;
 }
 
-InterpretResult Tone::interpret(const std::string& source) {
+InterpretResult Tone::interpret(const std::string& source, Object *&objects,
+                                std::unordered_map<std::string, Value> &strings) {
   Scanner scanner{ source };
   std::vector<Token> tokens = scanner.scanTokens();
 
@@ -103,8 +123,6 @@ InterpretResult Tone::interpret(const std::string& source) {
 //    std::cout << token.type << " " << source.substr(token.start, token.length) << '\n';
 //  }
 
-  Object* objects = nullptr;
-  std::unordered_map<StringObject*, Value> strings;
   Chunk chunk;
 
   // Q: better way to pass objects pointer?
@@ -114,9 +132,10 @@ InterpretResult Tone::interpret(const std::string& source) {
     return INTERPRET_COMPILATION_ERROR;
   }
 
-  VM vm{ chunk, objects };
+  vm.setChunk(chunk);
+  vm.setObjects(objects);
+  vm.resetProgramCounter();
   InterpretResult result = vm.run();
-  vm.freeObjects();
 
   return result;
 }
