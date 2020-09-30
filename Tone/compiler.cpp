@@ -60,18 +60,49 @@ void Compiler::varDeclaration() {
 
 uint8_t Compiler::parseVariable(const std::string &errorMessage) {
   consume(TOKEN_IDENTIFIER, errorMessage);
-  return identifierConstant(); // Q: is passing a pointer to the token the best?
+
+  declareVariable();
+  if (environment.getScopeDepth() > 0) return 0;
+
+  return identifierConstant(&previous); // Q: is passing a pointer to the token the best?
 }
 
-uint8_t Compiler::identifierConstant() {
-  return makeConstant(Value(copyString()));
+uint8_t Compiler::identifierConstant(Token* name) {
+  return makeConstant(Value(copyString(name)));
 }
 
 void Compiler::statement() {
   if (match(TOKEN_PRINT)) {
     printStatement();
+  } else if (match(TOKEN_LEFT_BRACE)) {
+    beginScope();
+    block();
+    endScope();
   } else {
     expressionStatement();
+  }
+}
+
+void Compiler::block() {
+  while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+    declaration();
+  }
+
+  consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+}
+
+void Compiler::beginScope() {
+  environment.incrementScopeDepth();
+}
+
+void Compiler::endScope() {
+  environment.decrementScopeDepth();
+
+  while (environment.getLocalCount() > 0 &&
+         (environment.getLocal(environment.getLocalCount() - 1))->depth >
+            environment.getScopeDepth()) {
+    emitByte(OP_POP);
+    environment.decrementLocalCount();
   }
 }
 
@@ -263,42 +294,56 @@ void Compiler::literal() {
 }
 
 void Compiler::string() {
-  emitConstant(Value(copyString()));
+  emitConstant(Value(copyString(&previous)));
 }
 
 void Compiler::variable(bool canAssign) {
-  namedVariable(canAssign);
+  namedVariable(previous, canAssign);
 }
 
-void Compiler::namedVariable(bool canAssign) {
-  uint8_t arg = identifierConstant();
+void Compiler::namedVariable(Token name, bool canAssign) {
+  uint8_t getOp, setOp;
+  int arg = resolveLocal(&environment, &name); // does environment need to be passed?
+  if (arg != -1) {
+    getOp = OP_GET_LOCAL;
+    setOp = OP_SET_LOCAL;
+  } else {
+    arg = identifierConstant(&name); // Q: why pass a pointer?
+    getOp = OP_GET_GLOBAL;
+    setOp = OP_SET_GLOBAL;
+  }
 
   if (canAssign && match(TOKEN_EQUAL)) {
     expression();
-    emitBytes(OP_SET_GLOBAL, arg);
+    emitBytes(setOp, (uint8_t)arg);
   } else {
-    emitBytes(OP_GET_GLOBAL, arg);
+    emitBytes(getOp, (uint8_t)arg);
   }
 }
 
-StringObject* Compiler::copyString() {
-  // Q: how can I make sure that stringObject gets deleted and memory gets freed at the right time?
-  //StringObject* stringObject = new StringObject(previous.lexeme);
-
-  std::unordered_map<std::string, Value>::iterator tempIt;
-  std::cout << "\nAll the strings in the strings map:" << '\n';
-  for (tempIt = strings->begin(); tempIt != strings->end(); ++tempIt) {
-    std::cout << tempIt->first << '\n';
+int Compiler::resolveLocal(Environment* environment, Token* name) {
+  for (int i = environment->getLocalCount() - 1; i >= 0; i--) {
+    Local* local = environment->getLocal(i);
+    if (identifiersEqual(name, &local->name)) {
+      if (local->depth == -1) {
+        error("Cannot read local variable in its own initializer.");
+      }
+      return i;
+    }
   }
-  std::cout << '\n';
 
-  std::unordered_map<std::string, Value>::iterator it = strings->find(previous.lexeme);
+  return -1;
+}
+
+StringObject* Compiler::copyString(Token* name) {
+  // Q: how can I make sure that stringObject gets deleted and memory gets freed at the right time?
+
+  std::unordered_map<std::string, Value>::iterator it = strings->find(name->lexeme);
   if (it == strings->end()) {
-    StringObject* stringObject = new StringObject(previous.lexeme);
+    StringObject* stringObject = new StringObject(name->lexeme);
     (*stringObject).setNext(objects);
     objects = stringObject;
-    //strings.insert(std::make_pair(stringObject, Value{ VAL_NULL }));
-    strings->insert(std::make_pair(previous.lexeme, Value{ stringObject }));
+    strings->insert(std::make_pair(name->lexeme, Value{ stringObject }));
 
     return stringObject;
   }
@@ -333,8 +378,49 @@ uint8_t Compiler::makeConstant(Value value) {
   return (uint8_t)constant;
 }
 
+void Compiler::declareVariable() {
+  if (environment.getScopeDepth() == 0) return;
+
+  if (environment.localCountAtMax()) {
+    error("Too many local variables in function.");
+    return;
+  }
+
+  Token* name = &previous; // Q: why create a pointer and then dereference it?
+
+  for (int i = environment.getLocalCount() - 1; i >= 0; i--) {
+    // Q: parentheses necessary?
+    // Q: why a pointer?
+    Local* local = environment.getLocal(i);
+
+    if (local->depth != -1 && local->depth < environment.getScopeDepth()) {
+      break;
+    }
+
+    if (identifiersEqual(name, &local->name)) {
+      error("Variable with this name already declared in this scope.");
+    }
+  }
+
+  environment.addLocal(*name);
+}
+
+bool Compiler::identifiersEqual(Token* a, Token* b) {
+  if (a->length != b->length) return false;
+  return a->lexeme.compare(b->lexeme) == 0;
+}
+
 void Compiler::defineVariable(uint8_t global) {
+  if (environment.getScopeDepth() > 0) {
+    markInitialised();
+    return;
+  }
+
   emitBytes(OP_DEFINE_GLOBAL, global);
+}
+
+void Compiler::markInitialised() {
+  environment.getLocal(environment.getLocalCount() - 1)->depth = environment.getScopeDepth();
 }
 
 void Compiler::consume(TokenType type, const std::string &message) {

@@ -132,13 +132,6 @@ InterpretResult Tone::interpret(const std::string& source, Object *&objects,
     return INTERPRET_COMPILATION_ERROR;
   }
 
-  std::unordered_map<std::string, Value>::iterator tempIt;
-  std::cout << "\nAll the strings in the strings map (compile() just ran):" << '\n';
-  for (tempIt = strings->begin(); tempIt != strings->end(); ++tempIt) {
-    std::cout << tempIt->first << '\n';
-  }
-  std::cout << '\n';
-
   vm.setChunk(chunk);
   vm.setObjects(objects);
   vm.resetProgramCounter();

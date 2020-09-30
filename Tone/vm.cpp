@@ -37,6 +37,18 @@ InterpretResult VM::run() {
       case OP_TRUE: stack.push(Value{ true }); break;
       case OP_FALSE: stack.push(Value{ false }); break;
       case OP_POP: stack.pop(); break;
+      case OP_GET_LOCAL: {
+        uint8_t slot = readByte();
+        stack.push(stack.at(slot));
+        break;
+      }
+
+      case OP_SET_LOCAL: {
+        uint8_t slot = readByte();
+        stack.set(slot, stack.peek(0));
+        break;
+      }
+
       case OP_GET_GLOBAL: {
         StringObject* name = readString();
         Value value;
@@ -68,13 +80,6 @@ InterpretResult VM::run() {
         } else {
           it->second = stack.peek(0);
         }
-
-        std::unordered_map<std::string, Value>::iterator tempIt;
-        std::cout << "\nAll the strings in the globals map:" << '\n';
-        for (tempIt = globals.begin(); tempIt != globals.end(); ++tempIt) {
-          std::cout << tempIt->first << ": " << tempIt->second << '\n';
-        }
-        std::cout << '\n';
 
         break;
       }

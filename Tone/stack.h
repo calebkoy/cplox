@@ -17,6 +17,8 @@ public:
   void push(Value value);
   Value pop();
   Value peek(int distance);
+  Value at(int slot);
+  void set(int slot, Value value); // Q: Is passing value by value best here?
   void print();
 };
 

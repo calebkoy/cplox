@@ -13,6 +13,8 @@ enum OpCode {
   OP_TRUE,
   OP_FALSE,
   OP_POP,
+  OP_GET_LOCAL,
+  OP_SET_LOCAL,
   OP_GET_GLOBAL,
   OP_DEFINE_GLOBAL,
   OP_SET_GLOBAL,
@@ -41,6 +43,7 @@ class Chunk {
 
   int disassembleSimpleInstruction(const std::string& name, int offset);
   int disassembleConstantInstruction(const std::string& name, int offset);
+  int disassembleByteInstruction(const std::string& name, int offset);
 
 public:
   void appendByte(uint8_t byte, int line);

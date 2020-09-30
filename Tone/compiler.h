@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "chunk.h"
+#include "environment.h"
 #include "scanner.h"
 
 enum Precedence {
@@ -33,6 +34,7 @@ class Compiler {
   const std::vector<Token> tokens;
   Chunk* chunk;
   Chunk* compilingChunk;
+  Environment environment; // Q: should this be a pointer?
   Object* objects;
   //std::unordered_map<StringObject*, Value> strings;
   std::unordered_map<std::string, Value> *strings;
@@ -94,19 +96,26 @@ class Compiler {
   void literal();
   void declaration();
   void variable(bool canAssign);
-  void namedVariable(bool canAssign);
+  void namedVariable(Token name, bool canAssign);
   void varDeclaration();
   uint8_t parseVariable(const std::string &errorMessage);
-  uint8_t identifierConstant();
+  uint8_t identifierConstant(Token* name);
+  void declareVariable();
   void defineVariable(uint8_t global);
+  void markInitialised();
+  void block();
+  void beginScope();
+  void endScope();
   void statement();
   void printStatement();
   void expressionStatement();
   void synchronise();
   bool match(TokenType type);
   bool check(TokenType type);
+  bool identifiersEqual(Token* a, Token* b);
   void string();
-  StringObject* copyString();
+  StringObject* copyString(Token* name);
+  int resolveLocal(Environment* environment, Token* name);
   void* reallocate(void* pointer, size_t oldSize, size_t newSize); // Q: Where's the best place for this function to reside?
   void invokePrefixRule(bool canAssign);
   void invokeInfixRule(bool canAssign);

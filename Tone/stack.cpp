@@ -25,6 +25,16 @@ Value Stack::peek(int distance) {
   return *(top - 1 - distance);
 }
 
+// Q: is this the best way to return the value?
+Value Stack::at(int slot) {
+  return arr.at(slot); // Q: how to deal w/ error handling (guard clauses?)?
+}
+
+void Stack::set(int slot, Value value) {
+  // Q: how to do error checking?
+  arr.at(slot) = value;
+}
+
 void Stack::print() {
   auto begin{ arr.begin() };
 

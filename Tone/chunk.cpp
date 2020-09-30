@@ -38,6 +38,10 @@ int Chunk::disassembleInstruction(int offset) {
       return disassembleSimpleInstruction("OP_FALSE", offset);
     case OP_POP:
       return disassembleSimpleInstruction("OP_POP", offset);
+    case OP_GET_LOCAL:
+      return disassembleByteInstruction("OP_GET_LOCAL", offset);
+    case OP_SET_LOCAL:
+      return disassembleByteInstruction("OP_SET_LOCAL", offset);
     case OP_GET_GLOBAL:
       return disassembleConstantInstruction("OP_GET_GLOBAL", offset);
     case OP_DEFINE_GLOBAL:
@@ -85,6 +89,12 @@ int Chunk::addConstant(Value value) {
 int Chunk::disassembleConstantInstruction(const std::string& name, int offset) {
   uint8_t constant = bytecode.at(offset + 1);
   std::cout << name << " " << +constant << " '" << constants.at(constant) << "'\n";
+  return offset + 2;
+}
+
+int Chunk::disassembleByteInstruction(const std::string& name, int offset) {
+  uint8_t slot = bytecode.at(offset + 1);
+  std::cout << name << " " << +slot << '\n';
   return offset + 2;
 }
 
