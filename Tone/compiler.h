@@ -114,6 +114,7 @@ class Compiler {
   void ifStatement();
   void whileStatement();
   void forStatement();
+  void returnStatement();
   Chunk* currentChunk();
   void emitLoop(int loopStart);
   int emitJump(uint8_t instruction);

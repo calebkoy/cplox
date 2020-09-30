@@ -118,6 +118,8 @@ void Compiler::statement() {
     forStatement();
   } else if (match(TOKEN_IF)) {
     ifStatement();
+  } else if (match(TOKEN_RETURN)) {
+    returnStatement();
   } else if (match(TOKEN_WHILE)) {
     whileStatement();
   } else if (match(TOKEN_LEFT_BRACE)) {
@@ -212,6 +214,20 @@ void Compiler::forStatement() {
   }
 
   endScope();
+}
+
+void Compiler::returnStatement() {
+  if (currentEnvironment.getFunctionType() == TYPE_SCRIPT) {
+    error("Cannot return from top-level code.");
+  }
+
+  if (match(TOKEN_SEMICOLON)) {
+    emitReturn();
+  } else {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after return value.");
+    emitByte(OP_RETURN);
+  }
 }
 
 void Compiler::emitLoop(int loopStart) {

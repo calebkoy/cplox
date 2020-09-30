@@ -72,3 +72,7 @@ void Environment::addLocal(Token name) {
 Environment* Environment::getEnclosing() {
   return enclosing;
 }
+
+FunctionType Environment::getFunctionType() {
+  return functionType;
+}

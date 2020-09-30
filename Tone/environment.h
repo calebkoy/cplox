@@ -36,6 +36,7 @@ public:
   int getLocalCount();
   FunctionObject* getFunction();
   Environment* getEnclosing();
+  FunctionType getFunctionType();
 };
 
 #endif // ENVIRONMENT_H
