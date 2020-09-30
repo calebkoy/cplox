@@ -19,9 +19,11 @@ class Environment {
   int localCount;
   FunctionObject* function;
   FunctionType functionType; // Q: could this go in the FunctionObject class?
+  Environment* enclosing;
 
 public:
   Environment();
+  Environment(FunctionType type, Environment* environment);
 
   void incrementScopeDepth();
   void decrementScopeDepth();
@@ -33,6 +35,7 @@ public:
   int getScopeDepth();
   int getLocalCount();
   FunctionObject* getFunction();
+  Environment* getEnclosing();
 };
 
 #endif // ENVIRONMENT_H

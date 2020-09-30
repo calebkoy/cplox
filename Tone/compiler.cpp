@@ -11,10 +11,9 @@
 // Q: should I be using smart pointers and/or move semantics here
 // to ensure that there are no memory leaks?
 // See https://stackoverflow.com/questions/7575459/c-should-i-initialize-pointer-members-that-are-assigned-to-in-the-constructor
-// Q: should chunk and compilingChunk be initialised here? Are they even needed?
 Compiler::Compiler(const std::vector<Token> tokens,
                    Object *&objects, std::unordered_map<std::string, Value> *strings) :
-  tokens{ tokens }, chunk{ nullptr }, compilingChunk{ nullptr }, objects{ objects }, strings{ strings } {
+  tokens{ tokens }, objects{ objects }, strings{ strings } {
 }
 
 FunctionObject* Compiler::compile() {
@@ -39,13 +38,51 @@ void Compiler::advance() {
 }
 
 void Compiler::declaration() {
-  if (match(TOKEN_VAR)) {
+  if (match(TOKEN_FUNCTION)) {
+    functionDeclaration();
+  } else if (match(TOKEN_VAR)) {
     varDeclaration();
   } else {
     statement();
   }
 
   if (panicMode) synchronise();
+}
+
+void Compiler::functionDeclaration() {
+  uint8_t global = parseVariable("Expect function name.");
+  markInitialised();
+  function(TYPE_FUNCTION);
+  defineVariable(global);
+}
+
+void Compiler::function(FunctionType type) {
+  Environment environment{ type, &currentEnvironment };
+  currentEnvironment = environment;
+  if (type != TYPE_SCRIPT) {
+    currentEnvironment.getFunction()->setName(copyString(&previous));
+  }
+  beginScope();
+
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
+  if (!check(TOKEN_RIGHT_PAREN)) {
+    do {
+      currentEnvironment.getFunction()->incrementArity();
+      if (currentEnvironment.getFunction()->getArity() > 255) {
+        errorAtCurrent("Cannot have more than 255 parameters.");
+      }
+
+      uint8_t paramConstant = parseVariable("Expect parameter name.");
+      defineVariable(paramConstant);
+    } while (match(TOKEN_COMMA));
+  }
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+
+  consume(TOKEN_LEFT_BRACE, "Expect '{' before function body.");
+  block();
+
+  FunctionObject* function = endCompiler();
+  emitBytes(OP_CONSTANT, makeConstant(Value{ function }));
 }
 
 void Compiler::varDeclaration() {
@@ -65,7 +102,7 @@ uint8_t Compiler::parseVariable(const std::string &errorMessage) {
   consume(TOKEN_IDENTIFIER, errorMessage);
 
   declareVariable();
-  if (environment.getScopeDepth() > 0) return 0;
+  if (currentEnvironment.getScopeDepth() > 0) return 0;
 
   return identifierConstant(&previous); // Q: is passing a pointer to the token the best?
 }
@@ -214,17 +251,17 @@ void Compiler::block() {
 }
 
 void Compiler::beginScope() {
-  environment.incrementScopeDepth();
+  currentEnvironment.incrementScopeDepth();
 }
 
 void Compiler::endScope() {
-  environment.decrementScopeDepth();
+  currentEnvironment.decrementScopeDepth();
 
-  while (environment.getLocalCount() > 0 &&
-         (environment.getLocal(environment.getLocalCount() - 1))->depth >
-            environment.getScopeDepth()) {
+  while (currentEnvironment.getLocalCount() > 0 &&
+         (currentEnvironment.getLocal(currentEnvironment.getLocalCount() - 1))->depth >
+            currentEnvironment.getScopeDepth()) {
     emitByte(OP_POP);
-    environment.decrementLocalCount();
+    currentEnvironment.decrementLocalCount();
   }
 }
 
@@ -446,7 +483,7 @@ void Compiler::variable(bool canAssign) {
 
 void Compiler::namedVariable(Token name, bool canAssign) {
   uint8_t getOp, setOp;
-  int arg = resolveLocal(&environment, &name); // does environment need to be passed?
+  int arg = resolveLocal(&currentEnvironment, &name); // does environment need to be passed?
   if (arg != -1) {
     getOp = OP_GET_LOCAL;
     setOp = OP_SET_LOCAL;
@@ -522,21 +559,21 @@ uint8_t Compiler::makeConstant(Value value) {
 }
 
 void Compiler::declareVariable() {
-  if (environment.getScopeDepth() == 0) return;
+  if (currentEnvironment.getScopeDepth() == 0) return;
 
-  if (environment.localCountAtMax()) {
+  if (currentEnvironment.localCountAtMax()) {
     error("Too many local variables in function.");
     return;
   }
 
   Token* name = &previous; // Q: why create a pointer and then dereference it?
 
-  for (int i = environment.getLocalCount() - 1; i >= 0; i--) {
+  for (int i = currentEnvironment.getLocalCount() - 1; i >= 0; i--) {
     // Q: parentheses necessary?
     // Q: why a pointer?
-    Local* local = environment.getLocal(i);
+    Local* local = currentEnvironment.getLocal(i);
 
-    if (local->depth != -1 && local->depth < environment.getScopeDepth()) {
+    if (local->depth != -1 && local->depth < currentEnvironment.getScopeDepth()) {
       break;
     }
 
@@ -545,7 +582,7 @@ void Compiler::declareVariable() {
     }
   }
 
-  environment.addLocal(*name);
+  currentEnvironment.addLocal(*name);
 }
 
 bool Compiler::identifiersEqual(Token* a, Token* b) {
@@ -554,7 +591,7 @@ bool Compiler::identifiersEqual(Token* a, Token* b) {
 }
 
 void Compiler::defineVariable(uint8_t global) {
-  if (environment.getScopeDepth() > 0) {
+  if (currentEnvironment.getScopeDepth() > 0) {
     markInitialised();
     return;
   }
@@ -563,7 +600,8 @@ void Compiler::defineVariable(uint8_t global) {
 }
 
 void Compiler::markInitialised() {
-  environment.getLocal(environment.getLocalCount() - 1)->depth = environment.getScopeDepth();
+  if (currentEnvironment.getScopeDepth() == 0) return;
+  currentEnvironment.getLocal(currentEnvironment.getLocalCount() - 1)->depth = currentEnvironment.getScopeDepth();
 }
 
 void Compiler::consume(TokenType type, const std::string &message) {
@@ -624,11 +662,12 @@ void Compiler::emitBytes(uint8_t byte1, uint8_t byte2) {
 
 FunctionObject* Compiler::endCompiler() {
   emitReturn();
-  FunctionObject* function = environment.getFunction();
+  FunctionObject* function = currentEnvironment.getFunction();
 #ifdef DEBUG_PRINT_CODE
   if (!hadError) currentChunk()->disassemble();
 #endif // DEBUG_PRINT_CODE
 
+  currentEnvironment = *(currentEnvironment.getEnclosing());
   return function;
 }
 
@@ -664,5 +703,5 @@ void Compiler::errorAt(Token token, const std::string &message) {
 
 // Q: is it better to return a pointer to a Chunk?
 Chunk* Compiler::currentChunk() {
-  return environment.getFunction()->getChunk();
+  return currentEnvironment.getFunction()->getChunk();
 }

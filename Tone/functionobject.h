@@ -18,8 +18,13 @@ class FunctionObject : public Object {
 public:
   FunctionObject();
 
+  void incrementArity();
+
   StringObject* getName();
   Chunk* getChunk();
+  int getArity();
+
+  void setName(StringObject* name);
 
   friend std::ostream& operator<<(std::ostream& out, const FunctionObject &object) {
     return out << (object.name)->getChars(); // Q: parentheses necessary?

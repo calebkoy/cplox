@@ -32,11 +32,8 @@ struct ParseRule {
 
 class Compiler {
   const std::vector<Token> tokens;
-  Chunk* chunk;
-  Chunk* compilingChunk;
-  Environment environment; // Q: should this be a pointer?
+  Environment currentEnvironment; // Q: should this be a pointer?
   Object* objects;
-  //std::unordered_map<StringObject*, Value> strings;
   std::unordered_map<std::string, Value> *strings;
   Token current;
   Token previous;
@@ -97,6 +94,8 @@ class Compiler {
   void or_();
   void literal();
   void declaration();
+  void functionDeclaration();
+  void function(FunctionType type);
   void variable(bool canAssign);
   void namedVariable(Token name, bool canAssign);
   void varDeclaration();
@@ -139,7 +138,6 @@ class Compiler {
   void error(const std::string &message);
   void errorAt(Token token, const std::string &message);
 public:
-  // Q: how should Chunk be passed?
   // Q: how should objects be passed? Is reference fine, or should it be a double pointer?
   // See: https://stackoverflow.com/questions/10240161/reason-to-pass-a-pointer-by-reference-in-c
   // Q: better way to pass strings? Is it fine that caller doesn't know that it's being passed by reference?
