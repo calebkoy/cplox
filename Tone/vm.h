@@ -29,6 +29,7 @@ class VM {
   Object* objects;
 
   uint8_t readByte();
+  uint16_t readShort();
   Value readConstant();
   StringObject* readString();
   void add();

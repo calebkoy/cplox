@@ -1,4 +1,5 @@
 #include <iostream>
+#include <limits>
 #include <memory>
 
 #include "compiler.h"
@@ -74,6 +75,12 @@ uint8_t Compiler::identifierConstant(Token* name) {
 void Compiler::statement() {
   if (match(TOKEN_PRINT)) {
     printStatement();
+  } else if (match(TOKEN_FOR)) {
+    forStatement();
+  } else if (match(TOKEN_IF)) {
+    ifStatement();
+  } else if (match(TOKEN_WHILE)) {
+    whileStatement();
   } else if (match(TOKEN_LEFT_BRACE)) {
     beginScope();
     block();
@@ -81,6 +88,119 @@ void Compiler::statement() {
   } else {
     expressionStatement();
   }
+}
+
+void Compiler::ifStatement() {
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+  expression();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+  int thenJump = emitJump(OP_JUMP_IF_FALSE);
+  emitByte(OP_POP);
+  statement();
+
+  int elseJump = emitJump(OP_JUMP);
+
+  patchJump(thenJump);
+  emitByte(OP_POP);
+
+  if (match(TOKEN_ELSE)) statement();
+  patchJump(elseJump);
+}
+
+void Compiler::whileStatement() {
+  int loopStart = compilingChunk->getBytecodeCount();
+
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+  expression();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+  int exitJump = emitJump(OP_JUMP_IF_FALSE);
+
+  emitByte(OP_POP);
+  statement();
+
+  emitLoop(loopStart);
+
+  patchJump(exitJump);
+  emitByte(OP_POP);
+}
+
+void Compiler::forStatement() {
+  beginScope();
+
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
+  if (match(TOKEN_SEMICOLON)) {
+    // No initializer. // Q: is this necessary?
+  } else if (match(TOKEN_VAR)) {
+    varDeclaration();
+  } else {
+    expressionStatement();
+  }
+
+  int loopStart = compilingChunk->getBytecodeCount();
+
+  int exitJump = -1;
+  if (!match(TOKEN_SEMICOLON)) {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+
+    // Jump out of the loop if the condition is false.
+    exitJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP); // Condition.
+  }
+
+  if (!match(TOKEN_RIGHT_PAREN)) {
+    int bodyJump = emitJump(OP_JUMP);
+
+    int incrementStart = compilingChunk->getBytecodeCount();
+    expression();
+    emitByte(OP_POP);
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+
+    emitLoop(loopStart);
+    loopStart = incrementStart;
+    patchJump(bodyJump);
+  }
+
+  statement();
+
+  emitLoop(loopStart);
+
+  if (exitJump != -1) {
+    patchJump(exitJump);
+    emitByte(OP_POP); // Condition.
+  }
+
+  endScope();
+}
+
+void Compiler::emitLoop(int loopStart) {
+  emitByte(OP_LOOP);
+
+  int offset = compilingChunk->getBytecodeCount() - loopStart + 2;
+  if (offset > std::numeric_limits<uint16_t>::max()) error("Loop body too large.");
+
+  emitByte((offset >> 8) & 0xff);
+  emitByte(offset & 0xff);
+}
+
+int Compiler::emitJump(uint8_t instruction) {
+  emitByte(instruction);
+  emitByte(0xff);
+  emitByte(0xff);
+  return compilingChunk->getBytecodeCount() - 2;
+}
+
+void Compiler::patchJump(int offset) {
+  int jump = compilingChunk->getBytecodeCount() - offset - 2;
+
+  if (jump > std::numeric_limits<uint16_t>::max()) {
+    error("Too much code to jump over.");
+  }
+
+  compilingChunk->setBytecodeValue(offset, (jump >> 8) & 0xff);
+  compilingChunk->setBytecodeValue(offset+1, jump & 0xff);
 }
 
 void Compiler::block() {
@@ -239,6 +359,9 @@ void Compiler::invokeInfixRule(bool canAssign) {
       binary();
       break;
 
+    case TOKEN_AND: and_(); break;
+    case TOKEN_OR: or_(); break;
+
     case TOKEN_LEFT_PAREN:
     case TOKEN_RIGHT_PAREN:
     case TOKEN_LEFT_BRACE:
@@ -251,7 +374,6 @@ void Compiler::invokeInfixRule(bool canAssign) {
     case TOKEN_IDENTIFIER:
     case TOKEN_STRING:
     case TOKEN_NUMBER:
-    case TOKEN_AND:
     case TOKEN_CLASS:
     case TOKEN_ELSE:
     case TOKEN_FALSE:
@@ -259,7 +381,6 @@ void Compiler::invokeInfixRule(bool canAssign) {
     case TOKEN_FUNCTION:
     case TOKEN_IF:
     case TOKEN_NULL:
-    case TOKEN_OR:
     case TOKEN_PRINT:
     case TOKEN_RETURN:
     case TOKEN_SUPER:
@@ -281,6 +402,26 @@ void Compiler::number() {
   double value = std::stod(previous.lexeme);
   emitConstant(Value{ VAL_NUMBER, value });
 
+}
+
+void Compiler::and_() {
+  int endJump = emitJump(OP_JUMP_IF_FALSE);
+
+  emitByte(OP_POP);
+  parsePrecedence(PRECEDENCE_AND);
+
+  patchJump(endJump);
+}
+
+void Compiler::or_() {
+  int elseJump = emitJump(OP_JUMP_IF_FALSE);
+  int endJump = emitJump(OP_JUMP);
+
+  patchJump(elseJump);
+  emitByte(OP_POP);
+
+  parsePrecedence(PRECEDENCE_OR);
+  patchJump(endJump);
 }
 
 void Compiler::literal() {

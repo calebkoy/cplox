@@ -68,6 +68,12 @@ int Chunk::disassembleInstruction(int offset) {
       return disassembleSimpleInstruction("OP_NEGATE", offset);
     case OP_PRINT:
       return disassembleSimpleInstruction("OP_PRINT", offset);
+    case OP_JUMP:
+      return disassembleJumpInstruction("OP_JUMP", 1, offset);
+    case OP_JUMP_IF_FALSE:
+      return disassembleJumpInstruction("OP_JUMP_IF_FALSE", 1, offset);
+    case OP_LOOP:
+      return disassembleJumpInstruction("OP_LOOP", -1, offset);
     case OP_RETURN:
       return disassembleSimpleInstruction("OP_RETURN", offset);
     default:
@@ -98,6 +104,13 @@ int Chunk::disassembleByteInstruction(const std::string& name, int offset) {
   return offset + 2;
 }
 
+int Chunk::disassembleJumpInstruction(const std::string& name, int sign, int offset) {
+  uint16_t jump = (uint16_t)(bytecode.at(offset + 1) << 8);
+  jump |= bytecode.at(offset + 2);
+  std::cout << name << " " << offset << " -> " << (offset + 3 + (sign * jump)) << '\n';
+  return offset + 3;
+}
+
 int Chunk::getLine(int offset) {
   if (offset < 0) return -1;
 
@@ -115,6 +128,16 @@ int Chunk::getLine(int offset) {
       start = mid + 1;
     }
   }
+}
+
+void Chunk::setBytecodeValue(int offset, uint8_t byte) {
+  // Q: error handling?
+
+  bytecode.at(offset) = byte;
+}
+
+int Chunk::getBytecodeCount() {
+  return (int)bytecode.size(); // Q: is there anything wrong with casting to int?
 }
 
 std::vector<uint8_t> Chunk::getBytecode() {

@@ -158,6 +158,24 @@ InterpretResult VM::run() {
         break;
       }
 
+      case OP_JUMP: {
+        uint16_t offset = readShort();
+        programCounter += offset;
+        break;
+      }
+
+      case OP_JUMP_IF_FALSE: {
+        uint16_t offset = readShort();
+        if (stack.peek(0).isFalsey()) programCounter += offset;
+        break;
+      }
+
+      case OP_LOOP: {
+        uint16_t offset = readShort();
+        programCounter -= offset;
+        break;
+      }
+
       case OP_RETURN: {
         // Exit interpreter.
         return INTERPRET_OK;
@@ -168,6 +186,14 @@ InterpretResult VM::run() {
 
 uint8_t VM::readByte() {
   return chunk.getBytecode().at(programCounter++);
+}
+
+uint16_t VM::readShort() {
+  programCounter += 2;
+  uint8_t firstPart = chunk.getBytecode().at(programCounter-2) << 8;
+  uint8_t secondPart = chunk.getBytecode().at(programCounter-1);
+
+  return firstPart | secondPart;
 }
 
 Value VM::readConstant() {

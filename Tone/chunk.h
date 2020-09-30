@@ -28,6 +28,9 @@ enum OpCode {
   OP_NOT,
   OP_NEGATE,
   OP_PRINT,
+  OP_JUMP,
+  OP_JUMP_IF_FALSE,
+  OP_LOOP,
   OP_RETURN
 };
 
@@ -44,6 +47,7 @@ class Chunk {
   int disassembleSimpleInstruction(const std::string& name, int offset);
   int disassembleConstantInstruction(const std::string& name, int offset);
   int disassembleByteInstruction(const std::string& name, int offset);
+  int disassembleJumpInstruction(const std::string& name, int sign, int offset);
 
 public:
   void appendByte(uint8_t byte, int line);
@@ -51,6 +55,9 @@ public:
   int disassembleInstruction(int offset);
   int addConstant(Value value);
   int getLine(int offset);
+  int getBytecodeCount();
+  void setBytecodeValue(int offset, uint8_t byte);
+
   std::vector<uint8_t> getBytecode();
   std::vector<Value> getConstants();
 };

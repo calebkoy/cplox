@@ -93,6 +93,8 @@ class Compiler {
   void grouping();
   void unary();
   void binary();
+  void and_();
+  void or_();
   void literal();
   void declaration();
   void variable(bool canAssign);
@@ -108,6 +110,12 @@ class Compiler {
   void endScope();
   void statement();
   void printStatement();
+  void ifStatement();
+  void whileStatement();
+  void forStatement();
+  void emitLoop(int loopStart);
+  int emitJump(uint8_t instruction);
+  void patchJump(int offset);
   void expressionStatement();
   void synchronise();
   bool match(TokenType type);
