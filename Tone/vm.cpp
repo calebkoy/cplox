@@ -2,17 +2,22 @@
 #include <stdarg.h> // Q: is this needed (for runtimeError())?
 
 #include "vm.h"
+#include "nativeobject.h"
 
 #define DEBUG_TRACE_EXECUTION
 
 #define AS_FUNCTION(object)  ((FunctionObject*)(object)) // Q: is there a better way of doing this than a macro?
+#define AS_NATIVE(object)        (((NativeObject*)(object))->getFunction()) // Q: ditto
 
 VM::VM() {
   objects = nullptr;
   callFrameCount = 0;
+  //defineNative("clock", this->clockNative);
 }
 
-VM::VM(Object* objects) : callFrameCount{ 0 }, objects{ objects } {}
+VM::VM(Object* objects) : callFrameCount{ 0 }, objects{ objects } {
+  //defineNative("clock", clockNative);
+}
 
 // Q: is this needed?
 InterpretResult VM::interpret() {
@@ -359,6 +364,15 @@ bool VM::callValue(Value callee, int argCount) {
         return call(AS_FUNCTION(calleeAsObject), argCount);
       }
 
+      case OBJECT_NATIVE: {
+        Object* calleeAsObject = callee.asObject();
+        Value (*native)(int argCount, Value* args) = AS_NATIVE(calleeAsObject);
+        Value result = native(argCount, stack.getTop() - argCount);
+        stack.setTop(stack.getTop() - argCount + 1);
+        stack.push(result);
+        return true;
+      }
+
       default:
         // Non-callable object type.
         break;
@@ -400,3 +414,32 @@ int VM::getCallFrameCount() {
 void VM::incrementCallFrameCount() {
   callFrameCount++;
 }
+
+//void VM::defineNative(const std::string &name, nativeFunctionPointer function) {
+//  stack.push(Value{ copyString(name) });
+//  NativeObject* newNative = new NativeObject(function); // Q: how can I make sure this dynamically allocated memory gets deleted?
+//  stack.push(Value{ newNative });
+//  globals.insert(std::make_pair(stack.at(0).asString()->getChars(), stack.at(1)));
+//  stack.pop();
+//  stack.pop();
+//}
+
+StringObject* VM::copyString(const std::string &name) {
+  // Q: how can I make sure that stringObject gets deleted and memory gets freed at the right time?
+
+  std::unordered_map<std::string, Value>::iterator it = strings.find(name);
+  if (it == strings.end()) {
+    StringObject* stringObject = new StringObject(name);
+    (*stringObject).setNext(objects);
+    objects = stringObject;
+    strings.insert(std::make_pair(name, Value{ stringObject }));
+
+    return stringObject;
+  }
+
+  return (it->second).asString(); // Q: are parentheses necessary?
+}
+
+//Value VM::clockNative(int argCount, Value* args) {
+//  return Val{ (double)clock() / CLOCKS_PER_SEC };
+//}

@@ -7,6 +7,7 @@
 #include "stack.h"
 #include "value.h"
 #include "functionobject.h"
+#include "nativeobject.h"
 
 enum InterpretResult {
   INTERPRET_OK,
@@ -29,9 +30,9 @@ class VM {
 
   // Q: should this be initialised in a/the constructor?
   // Q: should the first template type be std::string?
-  std::unordered_map<std::string, Value> globals;
+  std::unordered_map<std::string, Value> globals; // Q: should this be a pointer?
 
-  std::unordered_map<std::string, Value> strings; // Q: Is this needed?
+  std::unordered_map<std::string, Value> strings; // Q: Is this needed? // Q: should this be a pointer?
 
   // Q: is there a better, more C++ way of keeping track of the list of
   // heap allocated objects?
@@ -58,6 +59,8 @@ class VM {
 
   bool callValue(Value callee, int argCount);
   bool call(FunctionObject* function, int argCount);
+  //void defineNative(const std::string &name, nativeFunctionPointer function);
+  StringObject* copyString(const std::string &name);
 
 public:
   VM();
@@ -79,6 +82,8 @@ public:
   void freeObjects();
 
   void incrementCallFrameCount();
+
+  //Value clockNative(int argCount, Value* args); // Q: should this be here? Should it be public?
 
   Stack* getStack();
   CallFrame* getCallFrames();

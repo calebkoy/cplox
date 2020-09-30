@@ -49,6 +49,7 @@ public:
   bool isObject() const;
   bool isString() const;
   bool isFunction() const;
+  bool isNative() const;
   bool isFalsey();
   ObjectType getObjectType();
   std::string getFunctionName() const;
@@ -71,12 +72,14 @@ public:
         } else if (value.isFunction()) {
           //out << *(value.asFunction());
           out << value.getFunctionName();
+        } else if (value.isNative()) {
+          out << "<native fn>";
         } else {
           // Q: related to the above question:
           // What, if anything, should be done here?
           //out << *(value.asObject());
         }
-         break;
+        break;
       default: break; // Q: should this be handled differently?
     }
 

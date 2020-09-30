@@ -5,6 +5,7 @@
 
 enum ObjectType {
   OBJECT_FUNCTION,
+  OBJECT_NATIVE,
   OBJECT_STRING,
 };
 

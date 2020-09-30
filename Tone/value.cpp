@@ -85,6 +85,11 @@ bool Value::isFunction() const {
   return isObject() && asObject()->getType() == OBJECT_FUNCTION;
 }
 
+bool Value::isNative() const {
+  // Q: should some/all of this functionality belong to class Object?
+  return isObject() && asObject()->getType() == OBJECT_NATIVE;
+}
+
 bool Value::isFalsey() {
   return isNull() || (isBool() && !asBool());
 }

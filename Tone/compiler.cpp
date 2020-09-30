@@ -57,11 +57,79 @@ void Compiler::functionDeclaration() {
 }
 
 void Compiler::function(FunctionType type) {
+  // Debug the current env
+  std::cout << "Just entered function()\n" ;
+  std::cout << "Current env's function name: ";
+  if (currentEnvironment.getFunction()->getName() == NULL) {
+    std::cout << "null" << '\n';
+  } else {
+    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+  }
+  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
+  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
+  std::cout << "Current env locals: " << '\n';
+  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
+    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
+  }
+  std::cout << '\n';
+
   Environment environment{ type, &currentEnvironment };
   currentEnvironment = environment;
+
+  // Debug the current env
+  std::cout << "Just re-assigned current env\n";
+  std::cout << "Current env's function name: ";
+  if (currentEnvironment.getFunction()->getName() == NULL) {
+    std::cout << "null" << '\n';
+  } else {
+    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+  }
+  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
+  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
+  std::cout << "Current env locals: " << '\n';
+  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
+    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
+  }
+  std::cout << '\n';
+
+  // Debug the current env
+  std::cout << "\nEnclosing env's function name: ";
+  if (currentEnvironment.getEnclosing()->getFunction()->getName() == NULL) {
+    std::cout << "null" << '\n';
+  } else {
+    std::cout << currentEnvironment.getEnclosing()->getFunction()->getName()->getChars() << '\n';
+  }
+  std::cout << '\n';
+
   if (type != TYPE_SCRIPT) {
     currentEnvironment.getFunction()->setName(copyString(&previous));
+    std::cout << "Just set the name of the current env's function\n\n";
   }
+
+  // Debug the current env
+  std::cout << "Current env's function name: ";
+  if (currentEnvironment.getFunction()->getName() == NULL) {
+    std::cout << "null" << '\n';
+  } else {
+    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+  }
+  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
+  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
+  std::cout << "Current env locals: " << '\n';
+  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
+    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
+  }
+  std::cout << '\n';
+
+  // Debug the current env
+  std::cout << "\nEnclosing env's function name: ";
+  if (currentEnvironment.getEnclosing()->getFunction()->getName() == NULL) {
+    std::cout << "null" << '\n';
+  } else {
+    std::cout << currentEnvironment.getEnclosing()->getFunction()->getName()->getChars() << '\n';
+  }
+  std::cout << '\n';
+
   beginScope();
 
   consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
@@ -268,6 +336,22 @@ void Compiler::block() {
 
 void Compiler::beginScope() {
   currentEnvironment.incrementScopeDepth();
+
+  // Debug the current env
+  std::cout << "Just incremented scope depth" << '\n';
+  std::cout << "Current env's function name: ";
+  if (currentEnvironment.getFunction()->getName() == NULL) {
+    std::cout << "null" << '\n';
+  } else {
+    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+  }
+  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
+  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
+  std::cout << "Current env locals: " << '\n';
+  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
+    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
+  }
+  std::cout << '\n';
 }
 
 void Compiler::endScope() {
@@ -554,6 +638,7 @@ int Compiler::resolveLocal(Environment* environment, Token* name) {
   return -1;
 }
 
+// Q: consider moving copystring to another class since VM uses a similar function
 StringObject* Compiler::copyString(Token* name) {
   // Q: how can I make sure that stringObject gets deleted and memory gets freed at the right time?
 
@@ -622,6 +707,22 @@ void Compiler::declareVariable() {
   }
 
   currentEnvironment.addLocal(*name);
+
+  // Debug the current env
+  std::cout << "Just added local to current env" << '\n';
+  std::cout << "Current env's function name: ";
+  if (currentEnvironment.getFunction()->getName() == NULL) {
+    std::cout << "null" << '\n';
+  } else {
+    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+  }
+  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
+  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
+  std::cout << "Current env locals: " << '\n';
+  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
+    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
+  }
+  std::cout << '\n';
 }
 
 bool Compiler::identifiersEqual(Token* a, Token* b) {
@@ -640,7 +741,29 @@ void Compiler::defineVariable(uint8_t global) {
 
 void Compiler::markInitialised() {
   if (currentEnvironment.getScopeDepth() == 0) return;
+
+  std::cout << "Depth of local at index " << currentEnvironment.getLocalCount() - 1 << ": " <<
+            currentEnvironment.getLocal(currentEnvironment.getLocalCount() - 1)->depth << '\n';
+
   currentEnvironment.getLocal(currentEnvironment.getLocalCount() - 1)->depth = currentEnvironment.getScopeDepth();
+
+  // Debug the current env
+  std::cout << "Just updated the depth of the local at index " << currentEnvironment.getLocalCount()-1 << '\n';
+  std::cout << "New depth: " << currentEnvironment.getLocal(currentEnvironment.getLocalCount() - 1)->depth << '\n';
+
+  std::cout << "\nCurrent env's function name: ";
+  if (currentEnvironment.getFunction()->getName() == NULL) {
+    std::cout << "null" << '\n';
+  } else {
+    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+  }
+  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
+  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
+  std::cout << "Current env locals: " << '\n';
+  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
+    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
+  }
+  std::cout << '\n';
 }
 
 void Compiler::consume(TokenType type, const std::string &message) {
@@ -702,11 +825,54 @@ void Compiler::emitBytes(uint8_t byte1, uint8_t byte2) {
 FunctionObject* Compiler::endCompiler() {
   emitReturn();
   FunctionObject* function = currentEnvironment.getFunction();
+
+  // Debug the current env
+  std::cout << "Just got the current env's function\n";
+  std::cout << "Current env's function name: ";
+  if (currentEnvironment.getFunction()->getName() == NULL) {
+    std::cout << "null" << '\n';
+  } else {
+    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+  }
+  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
+  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
+  std::cout << "Current env locals: " << '\n';
+  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
+    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
+  }
+  std::cout << '\n';
+
 #ifdef DEBUG_PRINT_CODE
   if (!hadError) currentChunk()->disassemble();
 #endif // DEBUG_PRINT_CODE
 
+  // Debug the current env
+  std::cout << "\nEnclosing env's function name: ";
+  if (currentEnvironment.getEnclosing()->getFunction()->getName() == NULL) {
+    std::cout << "null" << '\n';
+  } else {
+    std::cout << currentEnvironment.getEnclosing()->getFunction()->getName()->getChars() << '\n';
+  }
+
+  // I think this line is wrong.
   currentEnvironment = *(currentEnvironment.getEnclosing());
+
+  // Debug the current env
+  std::cout << "Just set current env to the enclosing env\n";
+  std::cout << "Current env's function name: ";
+  if (currentEnvironment.getFunction()->getName() == NULL) {
+    std::cout << "null" << '\n';
+  } else {
+    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+  }
+  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
+  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
+  std::cout << "Current env locals: " << '\n';
+  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
+    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
+  }
+  std::cout << '\n';
+
   return function;
 }
 

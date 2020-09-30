@@ -34,14 +34,14 @@ class Compiler {
   const std::vector<Token> tokens;
   Environment currentEnvironment; // Q: should this be a pointer?
   Object* objects;
-  std::unordered_map<std::string, Value> *strings;
+  std::unordered_map<std::string, Value> *strings; // Q: should this be a pointer?
   Token current;
   Token previous;
   int currentTokenIndex{ 0 };
   bool hadError{ false };
   bool panicMode{ false };
   std::unordered_map<TokenType, Precedence> tokenPrecedence = {
-    {TOKEN_LEFT_PAREN, PRECEDENCE_NONE},
+    {TOKEN_LEFT_PAREN, PRECEDENCE_CALL},
     {TOKEN_RIGHT_PAREN, PRECEDENCE_NONE},
     {TOKEN_LEFT_BRACE, PRECEDENCE_NONE},
     {TOKEN_RIGHT_BRACE, PRECEDENCE_NONE},
