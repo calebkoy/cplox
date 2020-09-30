@@ -6,11 +6,11 @@
 #define DEBUG_TRACE_EXECUTION
 
 VM::VM() {
-  chunk = Chunk();
   objects = nullptr;
+  callFrameCount = 0;
 }
 
-VM::VM(Chunk chunk, Object* objects) : chunk{ chunk }, objects{ objects } {}
+VM::VM(Object* objects) : callFrameCount{ 0 }, objects{ objects } {}
 
 // Q: is this needed?
 InterpretResult VM::interpret() {
@@ -18,17 +18,20 @@ InterpretResult VM::interpret() {
 }
 
 InterpretResult VM::run() {
+  CallFrame* frame = &callFrames[callFrameCount - 1]; // Q: why a pointer?
+
   for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
     std::cout << "          ";
     stack.print();
     std::cout << '\n';
-    chunk.disassembleInstruction(programCounter);
+    frame->function->getChunk()->disassembleInstruction(frame->functionProgramCounter);
+    //chunk.disassembleInstruction(programCounter);
 #endif // DEBUG_TRACE_EXECUTION
     uint8_t instruction;
-    switch (instruction = readByte()) {
+    switch (instruction = readByte(frame)) {
       case OP_CONSTANT: {
-        Value constant = readConstant();
+        Value constant = readConstant(frame);
         stack.push(constant);
         break;
       }
@@ -38,19 +41,21 @@ InterpretResult VM::run() {
       case OP_FALSE: stack.push(Value{ false }); break;
       case OP_POP: stack.pop(); break;
       case OP_GET_LOCAL: {
-        uint8_t slot = readByte();
-        stack.push(stack.at(slot));
+        uint8_t slot = readByte(frame);
+        stack.push(frame->slots[slot]);
+        //stack.push(stack.at(slot));
         break;
       }
 
       case OP_SET_LOCAL: {
-        uint8_t slot = readByte();
-        stack.set(slot, stack.peek(0));
+        uint8_t slot = readByte(frame);
+        frame->slots[slot] = stack.peek(0);
+        //stack.set(slot, stack.peek(0));
         break;
       }
 
       case OP_GET_GLOBAL: {
-        StringObject* name = readString();
+        StringObject* name = readString(frame);
         Value value;
         std::unordered_map<std::string, Value>::iterator it = globals.find(name->getChars());
         if (it == globals.end()) {
@@ -63,14 +68,14 @@ InterpretResult VM::run() {
         break;
       }
       case OP_DEFINE_GLOBAL: {
-        StringObject* name = readString();
+        StringObject* name = readString(frame);
         globals.insert(std::make_pair(name->getChars(), stack.peek(0)));
         stack.pop();
         break;
       }
 
       case OP_SET_GLOBAL: {
-        StringObject* name = readString();
+        StringObject* name = readString(frame);
         std::unordered_map<std::string, Value>::iterator it = globals.find(name->getChars());
         if (it == globals.end()) {
           // Implicit variable declaration not allowed
@@ -159,20 +164,23 @@ InterpretResult VM::run() {
       }
 
       case OP_JUMP: {
-        uint16_t offset = readShort();
-        programCounter += offset;
+        uint16_t offset = readShort(frame);
+        frame->functionProgramCounter += offset;
+        //programCounter += offset;
         break;
       }
 
       case OP_JUMP_IF_FALSE: {
-        uint16_t offset = readShort();
-        if (stack.peek(0).isFalsey()) programCounter += offset;
+        uint16_t offset = readShort(frame);
+        if (stack.peek(0).isFalsey()) frame->functionProgramCounter += offset;
+        //if (stack.peek(0).isFalsey()) programCounter += offset;
         break;
       }
 
       case OP_LOOP: {
-        uint16_t offset = readShort();
-        programCounter -= offset;
+        uint16_t offset = readShort(frame);
+        frame->functionProgramCounter -= offset;
+        //programCounter -= offset;
         break;
       }
 
@@ -184,24 +192,32 @@ InterpretResult VM::run() {
   }
 }
 
-uint8_t VM::readByte() {
-  return chunk.getBytecode().at(programCounter++);
+uint8_t VM::readByte(CallFrame* frame) {
+  return frame->function->getChunk()->getBytecode().at(frame->functionProgramCounter++);
+
+  //return chunk.getBytecode().at(programCounter++);
 }
 
-uint16_t VM::readShort() {
-  programCounter += 2;
-  uint8_t firstPart = chunk.getBytecode().at(programCounter-2) << 8;
-  uint8_t secondPart = chunk.getBytecode().at(programCounter-1);
+uint16_t VM::readShort(CallFrame* frame) {
+  frame->functionProgramCounter += 2;
+  uint8_t firstPart = frame->function->getChunk()->getBytecode().at(frame->functionProgramCounter-2) << 8;
+  uint8_t secondPart = frame->function->getChunk()->getBytecode().at(frame->functionProgramCounter-1);
+
+//  programCounter += 2;
+//  uint8_t firstPart = chunk.getBytecode().at(programCounter-2) << 8;
+//  uint8_t secondPart = chunk.getBytecode().at(programCounter-1);
 
   return firstPart | secondPart;
 }
 
-Value VM::readConstant() {
-  return chunk.getConstants().at(readByte());
+Value VM::readConstant(CallFrame* frame) {
+  return frame->function->getChunk()->getConstants().at(readByte(frame));
+
+  //return chunk.getConstants().at(readByte());
 }
 
-StringObject* VM::readString() {
-  return readConstant().asString();
+StringObject* VM::readString(CallFrame* frame) {
+  return readConstant(frame).asString();
 }
 
 void VM::add() {
@@ -247,7 +263,11 @@ void VM::runtimeError(const char* format, ...) {
   va_end(args);
   fputs("\n", stderr);
 
-  int line = chunk.getLine(programCounter - 1);
+  CallFrame* frame = &(callFrames[callFrameCount - 1]); // Q: why a pointer?
+  int instruction = frame->functionProgramCounter - 1;
+  int line = frame->function->getChunk()->getLine(instruction);
+
+  //int line = chunk.getLine(programCounter - 1);
   std::cerr << "[line " << line << "] in script\n";
 
   stack.reset();
@@ -284,14 +304,32 @@ void VM::freeObjects() {
   }
 }
 
-void VM::setChunk(Chunk chunk) {
-  this->chunk = chunk;
-}
+// Todo: get rid of this when all code working
+//void VM::setChunk(Chunk chunk) {
+//  this->chunk = chunk;
+//}
 
 void VM::setObjects(Object* objects) {
   this->objects = objects;
 }
 
-void VM::resetProgramCounter() {
-  programCounter = 0;
+// Todo: get rid of this when all code working
+//void VM::resetProgramCounter() {
+//  programCounter = 0;
+//}
+
+Stack* VM::getStack() {
+  return &stack;
+}
+
+CallFrame* VM::getCallFrames() {
+  return callFrames;
+}
+
+int VM::getCallFrameCount() {
+  return callFrameCount;
+}
+
+void VM::incrementCallFrameCount() {
+  callFrameCount++;
 }

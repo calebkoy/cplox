@@ -11,18 +11,20 @@
 // Q: should I be using smart pointers and/or move semantics here
 // to ensure that there are no memory leaks?
 // See https://stackoverflow.com/questions/7575459/c-should-i-initialize-pointer-members-that-are-assigned-to-in-the-constructor
-Compiler::Compiler(const std::vector<Token> tokens, Chunk *chunk,
+// Q: should chunk and compilingChunk be initialised here? Are they even needed?
+Compiler::Compiler(const std::vector<Token> tokens,
                    Object *&objects, std::unordered_map<std::string, Value> *strings) :
-  tokens{ tokens }, chunk{ chunk }, compilingChunk{ chunk }, objects{ objects }, strings{ strings } {
+  tokens{ tokens }, chunk{ nullptr }, compilingChunk{ nullptr }, objects{ objects }, strings{ strings } {
 }
 
-bool Compiler::compile() {
+FunctionObject* Compiler::compile() {
   advance();
   while (!match(TOKEN_EOF)) {
     declaration();
   }
-  endCompiler();
-  return !hadError;
+
+  FunctionObject* function = endCompiler();
+  return hadError ? nullptr : function;
 }
 
 void Compiler::advance() {
@@ -109,7 +111,7 @@ void Compiler::ifStatement() {
 }
 
 void Compiler::whileStatement() {
-  int loopStart = compilingChunk->getBytecodeCount();
+  int loopStart = currentChunk()->getBytecodeCount();
 
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
   expression();
@@ -138,7 +140,7 @@ void Compiler::forStatement() {
     expressionStatement();
   }
 
-  int loopStart = compilingChunk->getBytecodeCount();
+  int loopStart = currentChunk()->getBytecodeCount();
 
   int exitJump = -1;
   if (!match(TOKEN_SEMICOLON)) {
@@ -153,7 +155,7 @@ void Compiler::forStatement() {
   if (!match(TOKEN_RIGHT_PAREN)) {
     int bodyJump = emitJump(OP_JUMP);
 
-    int incrementStart = compilingChunk->getBytecodeCount();
+    int incrementStart = currentChunk()->getBytecodeCount();
     expression();
     emitByte(OP_POP);
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
@@ -178,7 +180,7 @@ void Compiler::forStatement() {
 void Compiler::emitLoop(int loopStart) {
   emitByte(OP_LOOP);
 
-  int offset = compilingChunk->getBytecodeCount() - loopStart + 2;
+  int offset = currentChunk()->getBytecodeCount() - loopStart + 2;
   if (offset > std::numeric_limits<uint16_t>::max()) error("Loop body too large.");
 
   emitByte((offset >> 8) & 0xff);
@@ -189,18 +191,18 @@ int Compiler::emitJump(uint8_t instruction) {
   emitByte(instruction);
   emitByte(0xff);
   emitByte(0xff);
-  return compilingChunk->getBytecodeCount() - 2;
+  return currentChunk()->getBytecodeCount() - 2;
 }
 
 void Compiler::patchJump(int offset) {
-  int jump = compilingChunk->getBytecodeCount() - offset - 2;
+  int jump = currentChunk()->getBytecodeCount() - offset - 2;
 
   if (jump > std::numeric_limits<uint16_t>::max()) {
     error("Too much code to jump over.");
   }
 
-  compilingChunk->setBytecodeValue(offset, (jump >> 8) & 0xff);
-  compilingChunk->setBytecodeValue(offset+1, jump & 0xff);
+  currentChunk()->setBytecodeValue(offset, (jump >> 8) & 0xff);
+  currentChunk()->setBytecodeValue(offset+1, jump & 0xff);
 }
 
 void Compiler::block() {
@@ -510,7 +512,7 @@ void Compiler::emitConstant(Value value) {
 }
 
 uint8_t Compiler::makeConstant(Value value) {
-  int constant = (*compilingChunk).addConstant(value);
+  int constant = currentChunk()->addConstant(value);
   if (constant > UINT8_MAX) {
     error("Too many constants in one chunk.");
     return 0; // Q: could this be problematic?
@@ -612,7 +614,7 @@ void Compiler::binary() {
 }
 
 void Compiler::emitByte(uint8_t byte) {
-  (*compilingChunk).appendByte(byte, previous.line);
+  currentChunk()->appendByte(byte, previous.line);
 }
 
 void Compiler::emitBytes(uint8_t byte1, uint8_t byte2) {
@@ -620,11 +622,14 @@ void Compiler::emitBytes(uint8_t byte1, uint8_t byte2) {
   emitByte(byte2);
 }
 
-void Compiler::endCompiler() {
+FunctionObject* Compiler::endCompiler() {
   emitReturn();
+  FunctionObject* function = environment.getFunction();
 #ifdef DEBUG_PRINT_CODE
-  if (!hadError) (*compilingChunk).disassemble();
+  if (!hadError) currentChunk()->disassemble();
 #endif // DEBUG_PRINT_CODE
+
+  return function;
 }
 
 void Compiler::emitReturn() {
@@ -655,4 +660,9 @@ void Compiler::errorAt(Token token, const std::string &message) {
 
   std::cerr << ": " << message << '\n';
   hadError = true;
+}
+
+// Q: is it better to return a pointer to a Chunk?
+Chunk* Compiler::currentChunk() {
+  return environment.getFunction()->getChunk();
 }

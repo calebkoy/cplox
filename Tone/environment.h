@@ -4,6 +4,7 @@
 #include <array>
 #include <limits>
 
+#include "functionobject.h"
 #include "scanner.h"
 
 typedef struct {
@@ -16,6 +17,8 @@ class Environment {
   std::array<Local, uint8Count+1> locals;
   int scopeDepth;
   int localCount;
+  FunctionObject* function;
+  FunctionType functionType; // Q: could this go in the FunctionObject class?
 
 public:
   Environment();
@@ -29,6 +32,7 @@ public:
 
   int getScopeDepth();
   int getLocalCount();
+  FunctionObject* getFunction();
 };
 
 #endif // ENVIRONMENT_H

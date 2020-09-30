@@ -113,6 +113,7 @@ class Compiler {
   void ifStatement();
   void whileStatement();
   void forStatement();
+  Chunk* currentChunk();
   void emitLoop(int loopStart);
   int emitJump(uint8_t instruction);
   void patchJump(int offset);
@@ -133,7 +134,7 @@ class Compiler {
   void emitConstant(Value value);
   uint8_t makeConstant(Value value);
   void emitReturn();
-  void endCompiler();
+  FunctionObject* endCompiler();
   void errorAtCurrent(const std::string &message);
   void error(const std::string &message);
   void errorAt(Token token, const std::string &message);
@@ -142,10 +143,10 @@ public:
   // Q: how should objects be passed? Is reference fine, or should it be a double pointer?
   // See: https://stackoverflow.com/questions/10240161/reason-to-pass-a-pointer-by-reference-in-c
   // Q: better way to pass strings? Is it fine that caller doesn't know that it's being passed by reference?
-  Compiler(const std::vector<Token> tokens, Chunk *chunk,
+  Compiler(const std::vector<Token> tokens,
            Object *&objects, std::unordered_map<std::string, Value> *strings);
 
-  bool compile();
+  FunctionObject* compile();
 };
 
 #endif // COMPILER_H

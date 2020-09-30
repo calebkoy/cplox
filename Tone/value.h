@@ -48,9 +48,13 @@ public:
   bool isNumber();
   bool isObject() const;
   bool isString() const;
+  bool isFunction() const;
   bool isFalsey();
-  ValueType getType();
   ObjectType getObjectType();
+  std::string getFunctionName() const;
+
+  ValueType getType();
+
   friend std::ostream& operator<<(std::ostream& out, const Value &value) {
     switch (value.type) {
       case VAL_BOOL:
@@ -64,6 +68,9 @@ public:
       case VAL_OBJECT:
         if (value.isString()) {
           out << *(value.asString());
+        } else if (value.isFunction()) {
+          //out << *(value.asFunction());
+          out << value.getFunctionName();
         } else {
           // Q: related to the above question:
           // What, if anything, should be done here?

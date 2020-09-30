@@ -4,6 +4,7 @@
 #include <string>
 
 enum ObjectType {
+  OBJECT_FUNCTION,
   OBJECT_STRING,
 };
 

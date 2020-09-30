@@ -6,8 +6,7 @@
 #include "value.h"
 
 class Stack {
-  static const int max{ 256 };
-//  Value arr[max];
+  static const int max{ 64 * 256 }; // Todo: clean this up by removing hardcoded values
   std::array<Value, max> arr;
   Value* top;
 
@@ -20,6 +19,8 @@ public:
   Value at(int slot);
   void set(int slot, Value value); // Q: Is passing value by value best here?
   void print();
+
+  Value* getTop();
 };
 
 #endif // STACK_H

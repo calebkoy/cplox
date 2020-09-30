@@ -42,3 +42,7 @@ void Stack::print() {
     std::cout << "[ " << (*p) << " ]";
   }
 }
+
+Value* Stack::getTop() {
+  return top;
+}

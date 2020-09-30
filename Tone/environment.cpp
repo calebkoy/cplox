@@ -1,7 +1,18 @@
 #include "environment.h"
 
 // Q: is this default constructor necessary?
-Environment::Environment() : scopeDepth{ 0 }, localCount{ 0 } {}
+Environment::Environment() : scopeDepth{ 0 }, localCount{ 0 },
+                             function{ nullptr }, functionType{ TYPE_SCRIPT } {
+
+  function = new FunctionObject(); // Q: how to make sure we avoid memory leaks?
+
+  // Q: is token copied when it's put inside local?
+  // If not, what happens to token when the constructor ends?
+  Token token;
+  token.lexeme = "";
+  Local local = { token, 0 };
+  localCount++;
+}
 
 void Environment::incrementScopeDepth() {
   scopeDepth++;
@@ -28,6 +39,10 @@ Local* Environment::getLocal(int index) {
 
   // Q: is returning by address fine?
   return &locals.at(index);
+}
+
+FunctionObject* Environment::getFunction() {
+  return function;
 }
 
 bool Environment::localCountAtMax() {

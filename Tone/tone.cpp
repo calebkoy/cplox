@@ -123,19 +123,27 @@ InterpretResult Tone::interpret(const std::string& source, Object *&objects,
 //    std::cout << token.type << " " << source.substr(token.start, token.length) << '\n';
 //  }
 
-  Chunk chunk;
+  //Chunk chunk;
 
   // Q: better way to pass objects pointer?
   // Q: better way to pass unordered map?
-  Compiler compiler{ tokens, &chunk, objects, strings };
-  if (!compiler.compile()) {
-    return INTERPRET_COMPILATION_ERROR;
-  }
+  //Compiler compiler{ tokens, &chunk, objects, strings };
+  Compiler compiler{ tokens, objects, strings };
+  FunctionObject* function = compiler.compile();
+  if (function == NULL) return INTERPRET_COMPILATION_ERROR;
+//  if (!compiler.compile()) {
+//    return INTERPRET_COMPILATION_ERROR;
+//  }
 
-  vm.setChunk(chunk);
+  //vm.setChunk(chunk);
   vm.setObjects(objects);
-  vm.resetProgramCounter();
-  InterpretResult result = vm.run();
+  //vm.resetProgramCounter(); // Q: do I need an equivalent version to reset the function program counters?
 
-  return result;
+  // Q: would it be more OOP if VM did the operations below?
+  vm.getStack()->push(Value{ function });
+  CallFrame frame = { function, 0, vm.getStack()->getTop() };
+  vm.getCallFrames()[vm.getCallFrameCount()] = frame;
+  vm.incrementCallFrameCount();
+
+  return vm.run();
 }

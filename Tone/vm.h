@@ -6,6 +6,7 @@
 #include "chunk.h"
 #include "stack.h"
 #include "value.h"
+#include "functionobject.h"
 
 enum InterpretResult {
   INTERPRET_OK,
@@ -13,9 +14,17 @@ enum InterpretResult {
   INTERPRET_RUNTIME_ERROR
 };
 
+struct CallFrame {
+  FunctionObject* function;
+  int functionProgramCounter;
+  Value* slots; // Q: would it be better to use std::array or sth other than pointers?
+};
+
 class VM {
-  Chunk chunk;
-  int programCounter{ 0 };
+  static const int callFramesMax = 64;
+  CallFrame callFrames[callFramesMax];
+  int callFrameCount;
+
   Stack stack;
 
   // Q: should this be initialised in a/the constructor?
@@ -28,10 +37,10 @@ class VM {
   // heap allocated objects?
   Object* objects;
 
-  uint8_t readByte();
-  uint16_t readShort();
-  Value readConstant();
-  StringObject* readString();
+  uint8_t readByte(CallFrame* frame);
+  uint16_t readShort(CallFrame* frame);
+  Value readConstant(CallFrame* frame);
+  StringObject* readString(CallFrame* frame);
   void add();
   void subtract();
   void divide();
@@ -49,21 +58,28 @@ class VM {
 
 public:
   VM();
-
-  // Q: how should Chunk be passed?
-  VM(Chunk chunk, Object* objects);
+  VM(Object* objects);
 
   InterpretResult interpret();
   InterpretResult run();
 
+  // Todo: get rid of this when all the code is working.
   // Q: how should Chunk be passed?
   void setChunk(Chunk chunk);
 
   void setObjects(Object* objects);
+
+  // Todo: get rid of this when all the code is working.
   void resetProgramCounter();
 
   // Q: who should own this method?
   void freeObjects();
+
+  void incrementCallFrameCount();
+
+  Stack* getStack();
+  CallFrame* getCallFrames();
+  int getCallFrameCount();
 };
 
 #endif // VM_H

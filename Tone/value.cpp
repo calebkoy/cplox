@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "functionobject.h"
 #include "value.h"
 
 // Q: does it matter that this logic was somewhat arbitrarily chosen?
@@ -54,7 +55,7 @@ Object* Value::asObject() const {
 
 StringObject* Value::asString() const {
   // Q: what to do if the Value doesn't contain
-  // a pointer to a valid ObjString on the heap?
+  // a pointer to a valid StringObject on the heap?
   return (StringObject*)asObject();
 }
 
@@ -79,6 +80,11 @@ bool Value::isString() const {
   return isObject() && asObject()->getType() == OBJECT_STRING;
 }
 
+bool Value::isFunction() const {
+  // Q: should some/all of this functionality belong to class Object?
+  return isObject() && asObject()->getType() == OBJECT_FUNCTION;
+}
+
 bool Value::isFalsey() {
   return isNull() || (isBool() && !asBool());
 }
@@ -90,4 +96,11 @@ ValueType Value::getType() {
 ObjectType Value::getObjectType() {
   // Q: what to do if value isn't of type object?
   return asObject()->getType();
+}
+
+std::string Value::getFunctionName() const {
+  StringObject* name = ((FunctionObject*)asObject())->getName();
+  if (name == nullptr) return "<script>";
+
+  return name->getChars();
 }
