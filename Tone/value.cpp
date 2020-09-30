@@ -100,7 +100,7 @@ ObjectType Value::getObjectType() {
 
 std::string Value::getFunctionName() const {
   StringObject* name = ((FunctionObject*)asObject())->getName();
-  if (name == nullptr) return "<script>";
+  if (name == NULL) return "<script>"; // Q: could this be == nullptr?
 
   return name->getChars();
 }

@@ -46,3 +46,7 @@ void Stack::print() {
 Value* Stack::getTop() {
   return top;
 }
+
+void Stack::setTop(Value* value) {
+  top = value; // Q: is pointer assignment what I actually want to do here?
+}

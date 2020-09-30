@@ -400,8 +400,9 @@ void Compiler::invokeInfixRule(bool canAssign) {
 
     case TOKEN_AND: and_(); break;
     case TOKEN_OR: or_(); break;
+    case TOKEN_LEFT_PAREN: call(); break;
 
-    case TOKEN_LEFT_PAREN:
+
     case TOKEN_RIGHT_PAREN:
     case TOKEN_LEFT_BRACE:
     case TOKEN_RIGHT_BRACE:
@@ -461,6 +462,28 @@ void Compiler::or_() {
 
   parsePrecedence(PRECEDENCE_OR);
   patchJump(endJump);
+}
+
+void Compiler::call() {
+  uint8_t argCount = argumentList();
+  emitBytes(OP_CALL, argCount);
+}
+
+uint8_t Compiler::argumentList() {
+  uint8_t argCount = 0;
+  if (!check(TOKEN_RIGHT_PAREN)) {
+    do {
+      expression();
+
+      if (argCount == 255) {
+        error("Cannot have more than 255 arguments.");
+      }
+      argCount++;
+    } while (match(TOKEN_COMMA));
+  }
+
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments.");
+  return argCount;
 }
 
 void Compiler::literal() {
@@ -672,6 +695,7 @@ FunctionObject* Compiler::endCompiler() {
 }
 
 void Compiler::emitReturn() {
+  emitByte(OP_NULL);
   emitByte(OP_RETURN);
 }
 

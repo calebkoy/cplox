@@ -63,7 +63,7 @@ class Compiler {
     {TOKEN_IDENTIFIER, PRECEDENCE_NONE},
     {TOKEN_STRING, PRECEDENCE_NONE},
     {TOKEN_NUMBER, PRECEDENCE_NONE},
-    {TOKEN_AND, PRECEDENCE_NONE},
+    {TOKEN_AND, PRECEDENCE_AND},
     {TOKEN_CLASS, PRECEDENCE_NONE},
     {TOKEN_ELSE, PRECEDENCE_NONE},
     {TOKEN_FALSE, PRECEDENCE_NONE},
@@ -71,7 +71,7 @@ class Compiler {
     {TOKEN_FUNCTION, PRECEDENCE_NONE},
     {TOKEN_IF, PRECEDENCE_NONE},
     {TOKEN_NULL, PRECEDENCE_NONE},
-    {TOKEN_OR, PRECEDENCE_NONE},
+    {TOKEN_OR, PRECEDENCE_OR},
     {TOKEN_PRINT, PRECEDENCE_NONE},
     {TOKEN_RETURN, PRECEDENCE_NONE},
     {TOKEN_SUPER, PRECEDENCE_NONE},
@@ -92,6 +92,8 @@ class Compiler {
   void binary();
   void and_();
   void or_();
+  void call();
+  uint8_t argumentList();
   void literal();
   void declaration();
   void functionDeclaration();

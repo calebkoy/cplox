@@ -74,6 +74,8 @@ int Chunk::disassembleInstruction(int offset) {
       return disassembleJumpInstruction("OP_JUMP_IF_FALSE", 1, offset);
     case OP_LOOP:
       return disassembleJumpInstruction("OP_LOOP", -1, offset);
+    case OP_CALL:
+      return disassembleByteInstruction("OP_CALL", offset);
     case OP_RETURN:
       return disassembleSimpleInstruction("OP_RETURN", offset);
     default:

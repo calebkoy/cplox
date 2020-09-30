@@ -56,6 +56,9 @@ class VM {
   // ==)
   bool valuesEqual(Value a, Value b);
 
+  bool callValue(Value callee, int argCount);
+  bool call(FunctionObject* function, int argCount);
+
 public:
   VM();
   VM(Object* objects);

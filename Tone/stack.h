@@ -21,6 +21,8 @@ public:
   void print();
 
   Value* getTop();
+
+  void setTop(Value*);
 };
 
 #endif // STACK_H

@@ -5,6 +5,8 @@
 
 #define DEBUG_TRACE_EXECUTION
 
+#define AS_FUNCTION(object)  ((FunctionObject*)(object)) // Q: is there a better way of doing this than a macro?
+
 VM::VM() {
   objects = nullptr;
   callFrameCount = 0;
@@ -184,9 +186,31 @@ InterpretResult VM::run() {
         break;
       }
 
+      case OP_CALL: {
+        int argCount = readByte(frame); // Q: is a cast to int needed/preferable here?
+        if (!callValue(stack.peek(argCount), argCount)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        frame = &(callFrames[callFrameCount - 1]); // Q: parentheses needed?
+        break;
+      }
+
       case OP_RETURN: {
-        // Exit interpreter.
-        return INTERPRET_OK;
+        Value result = stack.pop();
+
+        callFrameCount--;
+        if (callFrameCount == 0) {
+          stack.pop();
+          return INTERPRET_OK;
+        }
+
+        // Q: is pointer assignment what I actually want to do here?
+        // (See the implementation of setTop)
+        stack.setTop(frame->slots);
+        stack.push(result);
+
+        frame = &(callFrames[callFrameCount - 1]);
+        break;
       }
     }
   }
@@ -263,12 +287,17 @@ void VM::runtimeError(const char* format, ...) {
   va_end(args);
   fputs("\n", stderr);
 
-  CallFrame* frame = &(callFrames[callFrameCount - 1]); // Q: why a pointer?
-  int instruction = frame->functionProgramCounter - 1;
-  int line = frame->function->getChunk()->getLine(instruction);
-
-  //int line = chunk.getLine(programCounter - 1);
-  std::cerr << "[line " << line << "] in script\n";
+  for (int i = callFrameCount - 1; i >= 0; i--) {
+    CallFrame* frame = &(callFrames[i]);
+    FunctionObject* function = frame->function;
+    int instruction = frame->functionProgramCounter - 1;
+    std::cerr << "[line " << function->getChunk()->getLine(instruction) << "] in ";
+    if (function->getName() == NULL) { // Q: could this be == nullptr?
+      std::cerr << "script\n";
+    } else {
+      std::cerr << function->getName()->getChars() << '\n';
+    }
+  }
 
   stack.reset();
 }
@@ -320,6 +349,44 @@ void VM::setObjects(Object* objects) {
 
 Stack* VM::getStack() {
   return &stack;
+}
+
+bool VM::callValue(Value callee, int argCount) {
+  if (callee.isObject()) {
+    switch (callee.getObjectType()) {
+      case OBJECT_FUNCTION: {
+        Object* calleeAsObject = callee.asObject();
+        return call(AS_FUNCTION(calleeAsObject), argCount);
+      }
+
+      default:
+        // Non-callable object type.
+        break;
+    }
+  }
+
+  runtimeError("Can only call functions and classes.");
+  return false;
+}
+
+bool VM::call(FunctionObject* function, int argCount) {
+  if (argCount != function->getArity()) {
+    runtimeError("Expected %d arguments but got %d.",
+        function->getArity(), argCount);
+    return false;
+  }
+
+  if (callFrameCount == callFramesMax) {
+    runtimeError("Stack overflow.");
+    return false;
+  }
+
+  CallFrame* frame = &(callFrames[callFrameCount++]);
+  frame->function = function;
+  frame->functionProgramCounter = 0;
+
+  frame->slots = stack.getTop() - argCount - 1; // Q: does this work?
+  return true;
 }
 
 CallFrame* VM::getCallFrames() {
