@@ -10,7 +10,7 @@ Environment::Environment() : scopeDepth{ 0 }, localCount{ 0 },
   // If not, what happens to token when the constructor ends?
   Token token;
   token.lexeme = "";
-  Local local = { token, 0 };
+  Local local = { token, 0, false };
   localCount++;
 }
 
@@ -72,7 +72,7 @@ bool Environment::localCountAtMax() {
 }
 
 void Environment::addLocal(Token name) {
-  Local local = { name, -1 };
+  Local local = { name, -1, false };
   locals[localCount++] = local;
 }
 

@@ -100,6 +100,8 @@ int Chunk::disassembleInstruction(int offset) {
 
       return offset;
     }
+    case OP_CLOSE_UPVALUE:
+      return disassembleSimpleInstruction("OP_CLOSE_UPVALUE", offset);
     case OP_RETURN:
       return disassembleSimpleInstruction("OP_RETURN", offset);
     default:

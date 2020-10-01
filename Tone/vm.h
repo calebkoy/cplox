@@ -38,6 +38,8 @@ class VM {
   // heap allocated objects?
   Object* objects;
 
+  UpvalueObject* openUpvalues;
+
   uint8_t readByte(CallFrame* frame);
   uint16_t readShort(CallFrame* frame);
   Value readConstant(CallFrame* frame);
@@ -60,6 +62,7 @@ class VM {
   bool callValue(Value callee, int argCount);
   bool call(ClosureObject* closure, int argCount);
   UpvalueObject* captureUpvalue(Value* local);
+  void closeUpvalues(Value* last);
   //void defineNative(const std::string &name, nativeFunctionPointer function); // Q: try to get this to work?
   StringObject* copyString(const std::string &name);
 

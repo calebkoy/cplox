@@ -387,7 +387,11 @@ void Compiler::endScope() {
   while (currentEnvironment->getLocalCount() > 0 &&
          (currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1))->depth >
             currentEnvironment->getScopeDepth()) {
-    emitByte(OP_POP);
+    if (currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1)->isCaptured) {
+      emitByte(OP_CLOSE_UPVALUE);
+    } else {
+      emitByte(OP_POP);
+    }
     currentEnvironment->decrementLocalCount();
   }
 }
@@ -673,6 +677,7 @@ int Compiler::resolveUpvalue(Environment* environment, Token* name) {
 
   int local = resolveLocal(environment->getEnclosing(), name);
   if (local != -1) {
+    environment->getEnclosing()->getLocal(local)->isCaptured = true;
     return addUpvalue(environment, (uint8_t)local, true);
   }
 

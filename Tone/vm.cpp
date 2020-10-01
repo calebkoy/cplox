@@ -13,11 +13,12 @@
 
 VM::VM() {
   objects = nullptr;
+  openUpvalues = nullptr;
   callFrameCount = 0;
   //defineNative("clock", this->clockNative);
 }
 
-VM::VM(Object* objects) : callFrameCount{ 0 }, objects{ objects } {
+VM::VM(Object* objects) : callFrameCount{ 0 }, objects{ objects }, openUpvalues{ nullptr } {
   //defineNative("clock", clockNative);
 }
 
@@ -232,8 +233,15 @@ InterpretResult VM::run() {
         break;
       }
 
+      case OP_CLOSE_UPVALUE:
+        closeUpvalues(stack.getTop() - 1);
+        stack.pop();
+        break;
+
       case OP_RETURN: {
         Value result = stack.pop();
+
+        closeUpvalues(frame->slots);
 
         callFrameCount--;
         if (callFrameCount == 0) {
@@ -337,6 +345,8 @@ void VM::runtimeError(const char* format, ...) {
   }
 
   stack.reset();
+  callFrameCount = 0;
+  openUpvalues = nullptr;
 }
 
 bool VM::valuesEqual(Value a, Value b) {
@@ -436,8 +446,37 @@ bool VM::call(ClosureObject* closure, int argCount) {
 }
 
 UpvalueObject* VM::captureUpvalue(Value* local) {
+  UpvalueObject* previousUpvalue = nullptr;
+  UpvalueObject* upvalue = openUpvalues;
+
+  while (upvalue != NULL && upvalue->getLocation() > local) {
+    previousUpvalue = upvalue;
+    upvalue = upvalue->getNext();
+  }
+
+  if (upvalue != NULL && upvalue->getLocation() == local) return upvalue;
+
   UpvalueObject* createdUpvalue = new UpvalueObject{ local }; // Q: how to avoid memory leaks?
+
+  createdUpvalue->setNext(upvalue);
+
+  if (previousUpvalue == NULL) {
+    openUpvalues = createdUpvalue;
+  } else {
+    previousUpvalue->setNext(createdUpvalue);
+  }
+
   return createdUpvalue;
+}
+
+void VM::closeUpvalues(Value* last) {
+  while (openUpvalues != NULL &&
+         openUpvalues->getLocation() >= last) {
+    UpvalueObject* upvalue = openUpvalues;
+    upvalue->setClosed(*(upvalue->getLocation()));
+    upvalue->setLocation(upvalue->getClosed());
+    openUpvalues = upvalue->getNext();
+  }
 }
 
 CallFrame* VM::getCallFrames() {
