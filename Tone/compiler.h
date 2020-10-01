@@ -32,7 +32,7 @@ struct ParseRule {
 
 class Compiler {
   const std::vector<Token> tokens;
-  Environment currentEnvironment; // Q: should this be a pointer?
+  Environment* currentEnvironment; // Q: should this be a pointer?
   Object* objects;
   std::unordered_map<std::string, Value> *strings; // Q: should this be a pointer?
   Token current;

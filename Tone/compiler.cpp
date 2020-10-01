@@ -14,6 +14,8 @@
 Compiler::Compiler(const std::vector<Token> tokens,
                    Object *&objects, std::unordered_map<std::string, Value> *strings) :
   tokens{ tokens }, objects{ objects }, strings{ strings } {
+
+  currentEnvironment = new Environment(TYPE_SCRIPT, nullptr); // Q: how can I prevent memory leaks?
 }
 
 FunctionObject* Compiler::compile() {
@@ -23,7 +25,7 @@ FunctionObject* Compiler::compile() {
   }
 
   FunctionObject* function = endCompiler();
-  return hadError ? nullptr : function;
+  return hadError ? NULL : function; // Q: could it be nullptr instead of NULL?
 }
 
 void Compiler::advance() {
@@ -60,83 +62,94 @@ void Compiler::function(FunctionType type) {
   // Debug the current env
   std::cout << "Just entered function()\n" ;
   std::cout << "Current env's function name: ";
-  if (currentEnvironment.getFunction()->getName() == NULL) {
+  if (currentEnvironment == NULL) {
     std::cout << "null" << '\n';
+  } else if (currentEnvironment->getFunction()->getName() == NULL) {
+    std::cout << "null" << '\n';
+    std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
+    std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
+    std::cout << "Current env locals: " << '\n';
+    for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
+      std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
+    }
+    std::cout << '\n';
   } else {
-    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+    std::cout << currentEnvironment->getFunction()->getName()->getChars() << '\n';
+    std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
+    std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
+    std::cout << "Current env locals: " << '\n';
+    for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
+      std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
+    }
+    std::cout << '\n';
   }
-  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
-  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
-  std::cout << "Current env locals: " << '\n';
-  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
-    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
-  }
-  std::cout << '\n';
 
-  Environment environment{ type, &currentEnvironment };
+  Environment* environment = new Environment{ type, currentEnvironment }; // Q: how to ensure memory isn't leaked?
   currentEnvironment = environment;
 
   // Debug the current env
   std::cout << "Just re-assigned current env\n";
   std::cout << "Current env's function name: ";
-  if (currentEnvironment.getFunction()->getName() == NULL) {
+  if (currentEnvironment->getFunction()->getName() == NULL) {
     std::cout << "null" << '\n';
   } else {
-    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+    std::cout << currentEnvironment->getFunction()->getName()->getChars() << '\n';
   }
-  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
-  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
+  std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
+  std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
   std::cout << "Current env locals: " << '\n';
-  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
-    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
+  for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
+    std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
   }
   std::cout << '\n';
 
   // Debug the current env
   std::cout << "\nEnclosing env's function name: ";
-  if (currentEnvironment.getEnclosing()->getFunction()->getName() == NULL) {
+  if (currentEnvironment->getEnclosing() == NULL) {
+    std::cout << "enclosing env is null\n";
+  } else if (currentEnvironment->getEnclosing()->getFunction()->getName() == NULL) {
     std::cout << "null" << '\n';
   } else {
-    std::cout << currentEnvironment.getEnclosing()->getFunction()->getName()->getChars() << '\n';
+    std::cout << currentEnvironment->getEnclosing()->getFunction()->getName()->getChars() << '\n';
   }
-  std::cout << '\n';
 
   if (type != TYPE_SCRIPT) {
-    currentEnvironment.getFunction()->setName(copyString(&previous));
+    currentEnvironment->getFunction()->setName(copyString(&previous));
     std::cout << "Just set the name of the current env's function\n\n";
   }
 
   // Debug the current env
   std::cout << "Current env's function name: ";
-  if (currentEnvironment.getFunction()->getName() == NULL) {
+  if (currentEnvironment->getFunction()->getName() == NULL) {
     std::cout << "null" << '\n';
   } else {
-    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+    std::cout << currentEnvironment->getFunction()->getName()->getChars() << '\n';
   }
-  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
-  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
+  std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
+  std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
   std::cout << "Current env locals: " << '\n';
-  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
-    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
+  for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
+    std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
   }
   std::cout << '\n';
 
   // Debug the current env
   std::cout << "\nEnclosing env's function name: ";
-  if (currentEnvironment.getEnclosing()->getFunction()->getName() == NULL) {
+  if (currentEnvironment->getEnclosing() == NULL) {
+    std::cout << "enclosing env is null\n";
+  } else if (currentEnvironment->getEnclosing()->getFunction()->getName() == NULL) {
     std::cout << "null" << '\n';
   } else {
-    std::cout << currentEnvironment.getEnclosing()->getFunction()->getName()->getChars() << '\n';
+    std::cout << currentEnvironment->getEnclosing()->getFunction()->getName()->getChars() << '\n';
   }
-  std::cout << '\n';
 
   beginScope();
 
   consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
   if (!check(TOKEN_RIGHT_PAREN)) {
     do {
-      currentEnvironment.getFunction()->incrementArity();
-      if (currentEnvironment.getFunction()->getArity() > 255) {
+      currentEnvironment->getFunction()->incrementArity();
+      if (currentEnvironment->getFunction()->getArity() > 255) {
         errorAtCurrent("Cannot have more than 255 parameters.");
       }
 
@@ -170,7 +183,7 @@ uint8_t Compiler::parseVariable(const std::string &errorMessage) {
   consume(TOKEN_IDENTIFIER, errorMessage);
 
   declareVariable();
-  if (currentEnvironment.getScopeDepth() > 0) return 0;
+  if (currentEnvironment->getScopeDepth() > 0) return 0;
 
   return identifierConstant(&previous); // Q: is passing a pointer to the token the best?
 }
@@ -285,7 +298,7 @@ void Compiler::forStatement() {
 }
 
 void Compiler::returnStatement() {
-  if (currentEnvironment.getFunctionType() == TYPE_SCRIPT) {
+  if (currentEnvironment->getFunctionType() == TYPE_SCRIPT) {
     error("Cannot return from top-level code.");
   }
 
@@ -335,33 +348,33 @@ void Compiler::block() {
 }
 
 void Compiler::beginScope() {
-  currentEnvironment.incrementScopeDepth();
+  currentEnvironment->incrementScopeDepth();
 
   // Debug the current env
   std::cout << "Just incremented scope depth" << '\n';
   std::cout << "Current env's function name: ";
-  if (currentEnvironment.getFunction()->getName() == NULL) {
+  if (currentEnvironment->getFunction()->getName() == NULL) {
     std::cout << "null" << '\n';
   } else {
-    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+    std::cout << currentEnvironment->getFunction()->getName()->getChars() << '\n';
   }
-  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
-  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
+  std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
+  std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
   std::cout << "Current env locals: " << '\n';
-  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
-    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
+  for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
+    std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
   }
   std::cout << '\n';
 }
 
 void Compiler::endScope() {
-  currentEnvironment.decrementScopeDepth();
+  currentEnvironment->decrementScopeDepth();
 
-  while (currentEnvironment.getLocalCount() > 0 &&
-         (currentEnvironment.getLocal(currentEnvironment.getLocalCount() - 1))->depth >
-            currentEnvironment.getScopeDepth()) {
+  while (currentEnvironment->getLocalCount() > 0 &&
+         (currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1))->depth >
+            currentEnvironment->getScopeDepth()) {
     emitByte(OP_POP);
-    currentEnvironment.decrementLocalCount();
+    currentEnvironment->decrementLocalCount();
   }
 }
 
@@ -606,7 +619,7 @@ void Compiler::variable(bool canAssign) {
 
 void Compiler::namedVariable(Token name, bool canAssign) {
   uint8_t getOp, setOp;
-  int arg = resolveLocal(&currentEnvironment, &name); // does environment need to be passed?
+  int arg = resolveLocal(currentEnvironment, &name); // does environment need to be passed?
   if (arg != -1) {
     getOp = OP_GET_LOCAL;
     setOp = OP_SET_LOCAL;
@@ -683,21 +696,21 @@ uint8_t Compiler::makeConstant(Value value) {
 }
 
 void Compiler::declareVariable() {
-  if (currentEnvironment.getScopeDepth() == 0) return;
+  if (currentEnvironment->getScopeDepth() == 0) return;
 
-  if (currentEnvironment.localCountAtMax()) {
+  if (currentEnvironment->localCountAtMax()) {
     error("Too many local variables in function.");
     return;
   }
 
   Token* name = &previous; // Q: why create a pointer and then dereference it?
 
-  for (int i = currentEnvironment.getLocalCount() - 1; i >= 0; i--) {
+  for (int i = currentEnvironment->getLocalCount() - 1; i >= 0; i--) {
     // Q: parentheses necessary?
     // Q: why a pointer?
-    Local* local = currentEnvironment.getLocal(i);
+    Local* local = currentEnvironment->getLocal(i);
 
-    if (local->depth != -1 && local->depth < currentEnvironment.getScopeDepth()) {
+    if (local->depth != -1 && local->depth < currentEnvironment->getScopeDepth()) {
       break;
     }
 
@@ -706,21 +719,21 @@ void Compiler::declareVariable() {
     }
   }
 
-  currentEnvironment.addLocal(*name);
+  currentEnvironment->addLocal(*name);
 
   // Debug the current env
   std::cout << "Just added local to current env" << '\n';
   std::cout << "Current env's function name: ";
-  if (currentEnvironment.getFunction()->getName() == NULL) {
+  if (currentEnvironment->getFunction()->getName() == NULL) {
     std::cout << "null" << '\n';
   } else {
-    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+    std::cout << currentEnvironment->getFunction()->getName()->getChars() << '\n';
   }
-  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
-  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
+  std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
+  std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
   std::cout << "Current env locals: " << '\n';
-  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
-    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
+  for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
+    std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
   }
   std::cout << '\n';
 }
@@ -731,7 +744,7 @@ bool Compiler::identifiersEqual(Token* a, Token* b) {
 }
 
 void Compiler::defineVariable(uint8_t global) {
-  if (currentEnvironment.getScopeDepth() > 0) {
+  if (currentEnvironment->getScopeDepth() > 0) {
     markInitialised();
     return;
   }
@@ -740,28 +753,28 @@ void Compiler::defineVariable(uint8_t global) {
 }
 
 void Compiler::markInitialised() {
-  if (currentEnvironment.getScopeDepth() == 0) return;
+  if (currentEnvironment->getScopeDepth() == 0) return;
 
-  std::cout << "Depth of local at index " << currentEnvironment.getLocalCount() - 1 << ": " <<
-            currentEnvironment.getLocal(currentEnvironment.getLocalCount() - 1)->depth << '\n';
+  std::cout << "Depth of local at index " << currentEnvironment->getLocalCount() - 1 << ": " <<
+            currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1)->depth << '\n';
 
-  currentEnvironment.getLocal(currentEnvironment.getLocalCount() - 1)->depth = currentEnvironment.getScopeDepth();
+  currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1)->depth = currentEnvironment->getScopeDepth();
 
   // Debug the current env
-  std::cout << "Just updated the depth of the local at index " << currentEnvironment.getLocalCount()-1 << '\n';
-  std::cout << "New depth: " << currentEnvironment.getLocal(currentEnvironment.getLocalCount() - 1)->depth << '\n';
+  std::cout << "Just updated the depth of the local at index " << currentEnvironment->getLocalCount()-1 << '\n';
+  std::cout << "New depth: " << currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1)->depth << '\n';
 
   std::cout << "\nCurrent env's function name: ";
-  if (currentEnvironment.getFunction()->getName() == NULL) {
+  if (currentEnvironment->getFunction()->getName() == NULL) {
     std::cout << "null" << '\n';
   } else {
-    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+    std::cout << currentEnvironment->getFunction()->getName()->getChars() << '\n';
   }
-  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
-  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
+  std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
+  std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
   std::cout << "Current env locals: " << '\n';
-  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
-    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
+  for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
+    std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
   }
   std::cout << '\n';
 }
@@ -824,21 +837,21 @@ void Compiler::emitBytes(uint8_t byte1, uint8_t byte2) {
 
 FunctionObject* Compiler::endCompiler() {
   emitReturn();
-  FunctionObject* function = currentEnvironment.getFunction();
+  FunctionObject* function = currentEnvironment->getFunction();
 
   // Debug the current env
   std::cout << "Just got the current env's function\n";
   std::cout << "Current env's function name: ";
-  if (currentEnvironment.getFunction()->getName() == NULL) {
+  if (currentEnvironment->getFunction()->getName() == NULL) {
     std::cout << "null" << '\n';
   } else {
-    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+    std::cout << currentEnvironment->getFunction()->getName()->getChars() << '\n';
   }
-  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
-  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
+  std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
+  std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
   std::cout << "Current env locals: " << '\n';
-  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
-    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
+  for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
+    std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
   }
   std::cout << '\n';
 
@@ -848,30 +861,41 @@ FunctionObject* Compiler::endCompiler() {
 
   // Debug the current env
   std::cout << "\nEnclosing env's function name: ";
-  if (currentEnvironment.getEnclosing()->getFunction()->getName() == NULL) {
+  if (currentEnvironment->getEnclosing() == NULL) {
+    std::cout << "enclosing env is null\n";
+  } else if (currentEnvironment->getEnclosing()->getFunction()->getName() == NULL) {
     std::cout << "null" << '\n';
   } else {
-    std::cout << currentEnvironment.getEnclosing()->getFunction()->getName()->getChars() << '\n';
+    std::cout << currentEnvironment->getEnclosing()->getFunction()->getName()->getChars() << '\n';
   }
 
-  // I think this line is wrong.
-  currentEnvironment = *(currentEnvironment.getEnclosing());
+  // I think this line was wrong.
+  currentEnvironment = currentEnvironment->getEnclosing();
 
   // Debug the current env
   std::cout << "Just set current env to the enclosing env\n";
   std::cout << "Current env's function name: ";
-  if (currentEnvironment.getFunction()->getName() == NULL) {
+  if (currentEnvironment == NULL) {
     std::cout << "null" << '\n';
+  } else if (currentEnvironment->getFunction()->getName() == NULL) {
+    std::cout << "null" << '\n';
+    std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
+    std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
+    std::cout << "Current env locals: " << '\n';
+    for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
+      std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
+    }
+    std::cout << '\n';
   } else {
-    std::cout << currentEnvironment.getFunction()->getName()->getChars() << '\n';
+    std::cout << currentEnvironment->getFunction()->getName()->getChars() << '\n';
+    std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
+    std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
+    std::cout << "Current env locals: " << '\n';
+    for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
+      std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
+    }
+    std::cout << '\n';
   }
-  std::cout << "Current env scope depth: " << currentEnvironment.getScopeDepth() << '\n';
-  std::cout << "Current env local count: " << currentEnvironment.getLocalCount() << '\n';
-  std::cout << "Current env locals: " << '\n';
-  for (int i = 0; i < currentEnvironment.getLocalCount(); i++) {
-    std::cout << currentEnvironment.getLocal(i)->name.lexeme << '\n';
-  }
-  std::cout << '\n';
 
   return function;
 }
@@ -909,5 +933,5 @@ void Compiler::errorAt(Token token, const std::string &message) {
 
 // Q: is it better to return a pointer to a Chunk?
 Chunk* Compiler::currentChunk() {
-  return currentEnvironment.getFunction()->getChunk();
+  return currentEnvironment->getFunction()->getChunk();
 }
