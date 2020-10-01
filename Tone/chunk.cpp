@@ -1,6 +1,11 @@
 #include <iostream>
 
 #include "chunk.h"
+#include "functionobject.h"
+
+// Q: is there a better way of doing this than a macro?
+// Also note that this is duplicated in vm.cpp
+#define AS_FUNCTION(object)  ((FunctionObject*)(object))
 
 void Chunk::appendByte(uint8_t byte, int line) {
   bytecode.push_back(byte);
@@ -48,6 +53,10 @@ int Chunk::disassembleInstruction(int offset) {
       return disassembleConstantInstruction("OP_DEFINE_GLOBAL", offset);
     case OP_SET_GLOBAL:
       return disassembleConstantInstruction("OP_SET_GLOBAL", offset);
+    case OP_GET_UPVALUE:
+      return disassembleByteInstruction("OP_GET_UPVALUE", offset);
+    case OP_SET_UPVALUE:
+      return disassembleByteInstruction("OP_SET_UPVALUE", offset);
     case OP_EQUAL:
       return disassembleSimpleInstruction("OP_EQUAL", offset);
     case OP_GREATER:
@@ -80,6 +89,15 @@ int Chunk::disassembleInstruction(int offset) {
       offset++;
       uint8_t constant = bytecode.at(offset++);
       std::cout << "OP_CLOSURE " << +constant << " " << constants.at(constant) << '\n';
+
+      FunctionObject* function = AS_FUNCTION(constants.at(constant).asObject());
+      for (int j = 0; j < function->getUpvalueCount(); j++) {
+        int isLocal = bytecode.at(offset++);
+        int index = bytecode.at(offset++);
+
+        std::cout << offset - 2 << "      |                     " << (isLocal ? "local " : "upvalue ") << index << '\n';
+      }
+
       return offset;
     }
     case OP_RETURN:

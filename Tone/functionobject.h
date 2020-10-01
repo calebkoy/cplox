@@ -12,6 +12,7 @@ enum FunctionType {
 
 class FunctionObject : public Object {
   int arity;
+  int upvalueCount;
   Chunk chunk;
   StringObject* name;
 
@@ -19,10 +20,12 @@ public:
   FunctionObject();
 
   void incrementArity();
+  void incrementUpvalueCount();
 
   StringObject* getName();
   Chunk* getChunk();
   int getArity();
+  int getUpvalueCount();
 
   void setName(StringObject* name);
 

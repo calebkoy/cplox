@@ -7,14 +7,20 @@
 #include "functionobject.h"
 #include "scanner.h"
 
-typedef struct {
+struct Local {
   Token name;
   int depth;
-} Local;
+};
+
+struct Upvalue {
+  uint8_t index;
+  bool isLocal;
+};
 
 class Environment {
-  static const int uint8Count = std::numeric_limits<uint8_t>::max();
-  std::array<Local, uint8Count+1> locals;
+  static const int uint8Count = std::numeric_limits<uint8_t>::max() + 1;
+  std::array<Local, uint8Count> locals;
+  std::array<Upvalue, uint8Count> upvalues;
   int scopeDepth;
   int localCount;
   FunctionObject* function;
@@ -31,6 +37,9 @@ public:
   void addLocal(Token name);
   bool localCountAtMax();
   Local* getLocal(int index);
+  Upvalue* getUpvalue(int index);
+
+  static int getUint8Count();
 
   int getScopeDepth();
   int getLocalCount();

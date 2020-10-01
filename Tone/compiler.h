@@ -127,6 +127,8 @@ class Compiler {
   void string();
   StringObject* copyString(Token* name);
   int resolveLocal(Environment* environment, Token* name);
+  int resolveUpvalue(Environment* environment, Token* name);
+  int addUpvalue(Environment* environment, uint8_t index, bool isLocal);
   void* reallocate(void* pointer, size_t oldSize, size_t newSize); // Q: Where's the best place for this function to reside?
   void invokePrefixRule(bool canAssign);
   void invokeInfixRule(bool canAssign);

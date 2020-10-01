@@ -56,6 +56,13 @@ Local* Environment::getLocal(int index) {
   return &locals.at(index);
 }
 
+Upvalue* Environment::getUpvalue(int index) {
+  // Q: error checking? (e.g., guard clauses?)
+
+  // Q: is returning by address fine?
+  return &upvalues.at(index);
+}
+
 FunctionObject* Environment::getFunction() {
   return function;
 }
@@ -75,4 +82,8 @@ Environment* Environment::getEnclosing() {
 
 FunctionType Environment::getFunctionType() {
   return functionType;
+}
+
+int Environment::getUint8Count() {
+  return uint8Count;
 }

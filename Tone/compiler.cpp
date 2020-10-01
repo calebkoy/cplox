@@ -164,6 +164,11 @@ void Compiler::function(FunctionType type) {
 
   FunctionObject* function = endCompiler();
   emitBytes(OP_CLOSURE, makeConstant(Value{ function }));
+
+  for (int i = 0; i < function->getUpvalueCount(); i++) {
+    emitByte(environment->getUpvalue(i)->isLocal ? 1 : 0);
+    emitByte(environment->getUpvalue(i)->index);
+  }
 }
 
 void Compiler::varDeclaration() {
@@ -623,6 +628,9 @@ void Compiler::namedVariable(Token name, bool canAssign) {
   if (arg != -1) {
     getOp = OP_GET_LOCAL;
     setOp = OP_SET_LOCAL;
+  } else if ((arg = resolveUpvalue(currentEnvironment, &name)) != -1) {
+    getOp = OP_GET_UPVALUE;
+    setOp = OP_SET_UPVALUE;
   } else {
     arg = identifierConstant(&name); // Q: why pass a pointer?
     getOp = OP_GET_GLOBAL;
@@ -649,6 +657,44 @@ int Compiler::resolveLocal(Environment* environment, Token* name) {
   }
 
   return -1;
+}
+
+int Compiler::resolveUpvalue(Environment* environment, Token* name) {
+  if (environment->getEnclosing() == NULL) return -1;
+
+  int local = resolveLocal(environment->getEnclosing(), name);
+  if (local != -1) {
+    return addUpvalue(environment, (uint8_t)local, true);
+  }
+
+  int upvalue = resolveUpvalue(environment->getEnclosing(), name);
+  if (upvalue != -1) {
+    return addUpvalue(environment, (uint8_t)upvalue, false);
+  }
+
+  return -1;
+}
+
+int Compiler::addUpvalue(Environment* environment, uint8_t index, bool isLocal) {
+  int upvalueCount = environment->getFunction()->getUpvalueCount();
+
+  for (int i = 0; i < upvalueCount; i++) {
+    Upvalue* upvalue = environment->getUpvalue(i);
+    if (upvalue->index == index && upvalue->isLocal == isLocal) {
+      return i;
+    }
+  }
+
+  if (upvalueCount == Environment::getUint8Count()) {
+    error("Too many closure variables in function.");
+    return 0;
+  }
+
+  environment->getUpvalue(upvalueCount)->isLocal = isLocal; // Q: should getUpvalue return a pointer instead?
+  environment->getUpvalue(upvalueCount)->index = index;
+  environment->getFunction()->incrementUpvalueCount();
+
+  return upvalueCount;
 }
 
 // Q: consider moving copystring to another class since VM uses a similar function

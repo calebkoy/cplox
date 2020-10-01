@@ -1,8 +1,6 @@
 #include <iostream>
 
-#include "chunk.h"
 #include "tone.h"
-#include "vm.h"
 
 int main(int argc, char *argv[]) {
   Tone tone;
