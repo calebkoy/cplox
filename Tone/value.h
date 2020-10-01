@@ -49,10 +49,14 @@ public:
   bool isObject() const;
   bool isString() const;
   bool isFunction() const;
+  bool isClosure()const;
   bool isNative() const;
   bool isFalsey();
   ObjectType getObjectType();
+
+  // Q: is this the right place for these? Especially bec. their main use is for printing.
   std::string getFunctionName() const;
+  std::string getClosureFunctionName() const;
 
   ValueType getType();
 
@@ -74,6 +78,8 @@ public:
           out << value.getFunctionName();
         } else if (value.isNative()) {
           out << "<native fn>";
+        } else if (value.isClosure()) {
+          out << value.getClosureFunctionName();
         } else {
           // Q: related to the above question:
           // What, if anything, should be done here?

@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "closureobject.h"
 #include "functionobject.h"
 #include "value.h"
 
@@ -90,6 +91,11 @@ bool Value::isNative() const {
   return isObject() && asObject()->getType() == OBJECT_NATIVE;
 }
 
+bool Value::isClosure() const {
+  // Q: should some/all of this functionality belong to class Object?
+  return isObject() && asObject()->getType() == OBJECT_CLOSURE;
+}
+
 bool Value::isFalsey() {
   return isNull() || (isBool() && !asBool());
 }
@@ -108,4 +114,16 @@ std::string Value::getFunctionName() const {
   if (name == NULL) return "<script>"; // Q: could this be == nullptr?
 
   return name->getChars();
+}
+
+std::string Value::getClosureFunctionName() const {
+  ClosureObject* closure = (ClosureObject*)asObject();
+
+  if (closure->getFunction() == NULL) {
+    return "";
+  } else if (closure->getFunction()->getName() == NULL) {
+    return "<script>";
+  } else {
+    return "<fn " + closure->getFunction()->getName()->getChars() + ">";
+  }
 }

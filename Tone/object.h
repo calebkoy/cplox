@@ -4,6 +4,7 @@
 #include <string>
 
 enum ObjectType {
+  OBJECT_CLOSURE,
   OBJECT_FUNCTION,
   OBJECT_NATIVE,
   OBJECT_STRING,
