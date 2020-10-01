@@ -3,10 +3,12 @@
 
 #include "vm.h"
 #include "nativeobject.h"
+#include "closureobject.h"
 
 #define DEBUG_TRACE_EXECUTION
 
 #define AS_FUNCTION(object)  ((FunctionObject*)(object)) // Q: is there a better way of doing this than a macro?
+#define AS_CLOSURE(object)  ((ClosureObject*)(object)) // Q: ditto
 #define AS_NATIVE(object)        (((NativeObject*)(object))->getFunction()) // Q: ditto
 
 VM::VM() {
@@ -32,7 +34,7 @@ InterpretResult VM::run() {
     std::cout << "          ";
     stack.print();
     std::cout << '\n';
-    frame->function->getChunk()->disassembleInstruction(frame->functionProgramCounter);
+    frame->closure->getFunction()->getChunk()->disassembleInstruction(frame->functionProgramCounter);
     //chunk.disassembleInstruction(programCounter);
 #endif // DEBUG_TRACE_EXECUTION
     uint8_t instruction;
@@ -200,6 +202,13 @@ InterpretResult VM::run() {
         break;
       }
 
+      case OP_CLOSURE: {
+        FunctionObject* function = AS_FUNCTION(readConstant(frame).asObject());
+        ClosureObject* closure = new ClosureObject(function); // Q: how do I avoid memory leaks here?
+        stack.push(Value{ closure });
+        break;
+      }
+
       case OP_RETURN: {
         Value result = stack.pop();
 
@@ -222,15 +231,15 @@ InterpretResult VM::run() {
 }
 
 uint8_t VM::readByte(CallFrame* frame) {
-  return frame->function->getChunk()->getBytecode().at(frame->functionProgramCounter++);
+  return frame->closure->getFunction()->getChunk()->getBytecode().at(frame->functionProgramCounter++);
 
   //return chunk.getBytecode().at(programCounter++);
 }
 
 uint16_t VM::readShort(CallFrame* frame) {
   frame->functionProgramCounter += 2;
-  uint8_t firstPart = frame->function->getChunk()->getBytecode().at(frame->functionProgramCounter-2) << 8;
-  uint8_t secondPart = frame->function->getChunk()->getBytecode().at(frame->functionProgramCounter-1);
+  uint8_t firstPart = frame->closure->getFunction()->getChunk()->getBytecode().at(frame->functionProgramCounter-2) << 8;
+  uint8_t secondPart = frame->closure->getFunction()->getChunk()->getBytecode().at(frame->functionProgramCounter-1);
 
 //  programCounter += 2;
 //  uint8_t firstPart = chunk.getBytecode().at(programCounter-2) << 8;
@@ -240,7 +249,7 @@ uint16_t VM::readShort(CallFrame* frame) {
 }
 
 Value VM::readConstant(CallFrame* frame) {
-  return frame->function->getChunk()->getConstants().at(readByte(frame));
+  return frame->closure->getFunction()->getChunk()->getConstants().at(readByte(frame));
 
   //return chunk.getConstants().at(readByte());
 }
@@ -294,7 +303,7 @@ void VM::runtimeError(const char* format, ...) {
 
   for (int i = callFrameCount - 1; i >= 0; i--) {
     CallFrame* frame = &(callFrames[i]);
-    FunctionObject* function = frame->function;
+    FunctionObject* function = frame->closure->getFunction();
     int instruction = frame->functionProgramCounter - 1;
     std::cerr << "[line " << function->getChunk()->getLine(instruction) << "] in ";
     if (function->getName() == NULL) { // Q: could this be == nullptr?
@@ -359,9 +368,9 @@ Stack* VM::getStack() {
 bool VM::callValue(Value callee, int argCount) {
   if (callee.isObject()) {
     switch (callee.getObjectType()) {
-      case OBJECT_FUNCTION: {
+      case OBJECT_CLOSURE: {
         Object* calleeAsObject = callee.asObject();
-        return call(AS_FUNCTION(calleeAsObject), argCount);
+        return call(AS_CLOSURE(calleeAsObject), argCount);
       }
 
       case OBJECT_NATIVE: {
@@ -383,10 +392,10 @@ bool VM::callValue(Value callee, int argCount) {
   return false;
 }
 
-bool VM::call(FunctionObject* function, int argCount) {
-  if (argCount != function->getArity()) {
+bool VM::call(ClosureObject* closure, int argCount) {
+  if (argCount != closure->getFunction()->getArity()) {
     runtimeError("Expected %d arguments but got %d.",
-        function->getArity(), argCount);
+        closure->getFunction()->getArity(), argCount);
     return false;
   }
 
@@ -396,7 +405,7 @@ bool VM::call(FunctionObject* function, int argCount) {
   }
 
   CallFrame* frame = &(callFrames[callFrameCount++]);
-  frame->function = function;
+  frame->closure = closure;
   frame->functionProgramCounter = 0;
 
   frame->slots = stack.getTop() - argCount - 1; // Q: does this work?

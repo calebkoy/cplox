@@ -141,7 +141,14 @@ InterpretResult Tone::interpret(const std::string& source, Object *&objects,
 
   // Q: would it be more OOP if VM did the operations below?
   vm.getStack()->push(Value{ function });
-  CallFrame frame = { function, 0, vm.getStack()->getTop() };
+
+  ClosureObject* closure = new ClosureObject{ function }; // Q: how to avoid memory leaks?
+
+  // Related to garbage collection. Q: is it necessary?
+  vm.getStack()->pop();
+  vm.getStack()->push(Value{ closure });
+
+  CallFrame frame = { closure, 0, vm.getStack()->getTop() };
   vm.getCallFrames()[vm.getCallFrameCount()] = frame;
   vm.incrementCallFrameCount();
 

@@ -163,7 +163,7 @@ void Compiler::function(FunctionType type) {
   block();
 
   FunctionObject* function = endCompiler();
-  emitBytes(OP_CONSTANT, makeConstant(Value{ function }));
+  emitBytes(OP_CLOSURE, makeConstant(Value{ function }));
 }
 
 void Compiler::varDeclaration() {

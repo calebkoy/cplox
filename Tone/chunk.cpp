@@ -76,6 +76,12 @@ int Chunk::disassembleInstruction(int offset) {
       return disassembleJumpInstruction("OP_LOOP", -1, offset);
     case OP_CALL:
       return disassembleByteInstruction("OP_CALL", offset);
+    case OP_CLOSURE: {
+      offset++;
+      uint8_t constant = bytecode.at(offset++);
+      std::cout << "OP_CLOSURE " << +constant << " " << constants.at(constant) << '\n';
+      return offset;
+    }
     case OP_RETURN:
       return disassembleSimpleInstruction("OP_RETURN", offset);
     default:

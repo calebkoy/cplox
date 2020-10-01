@@ -6,7 +6,7 @@
 #include "chunk.h"
 #include "stack.h"
 #include "value.h"
-#include "functionobject.h"
+#include "closureobject.h"
 #include "nativeobject.h"
 
 enum InterpretResult {
@@ -16,7 +16,7 @@ enum InterpretResult {
 };
 
 struct CallFrame {
-  FunctionObject* function;
+  ClosureObject* closure;
   int functionProgramCounter;
   Value* slots; // Q: would it be better to use std::array or sth other than pointers?
 };
@@ -58,7 +58,7 @@ class VM {
   bool valuesEqual(Value a, Value b);
 
   bool callValue(Value callee, int argCount);
-  bool call(FunctionObject* function, int argCount);
+  bool call(ClosureObject* closure, int argCount);
   //void defineNative(const std::string &name, nativeFunctionPointer function);
   StringObject* copyString(const std::string &name);
 
