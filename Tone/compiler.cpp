@@ -6,6 +6,8 @@
 
 #define DEBUG_PRINT_CODE
 
+// #define DEBUG_ENV_CODE
+
 // Q: should there be a default constructor that sets pointer members to nullptr?
 
 // Q: should I be using smart pointers and/or move semantics here
@@ -59,6 +61,7 @@ void Compiler::functionDeclaration() {
 }
 
 void Compiler::function(FunctionType type) {
+#ifdef DEBUG_ENV_CODE
   // Debug the current env
   std::cout << "Just entered function()\n" ;
   std::cout << "Current env's function name: ";
@@ -83,10 +86,12 @@ void Compiler::function(FunctionType type) {
     }
     std::cout << '\n';
   }
+#endif // DEBUG_ENV_CODE
 
   Environment* environment = new Environment{ type, currentEnvironment }; // Q: how to ensure memory isn't leaked?
   currentEnvironment = environment;
 
+#ifdef DEBUG_ENV_CODE
   // Debug the current env
   std::cout << "Just re-assigned current env\n";
   std::cout << "Current env's function name: ";
@@ -112,12 +117,13 @@ void Compiler::function(FunctionType type) {
   } else {
     std::cout << currentEnvironment->getEnclosing()->getFunction()->getName()->getChars() << '\n';
   }
+#endif
 
   if (type != TYPE_SCRIPT) {
     currentEnvironment->getFunction()->setName(copyString(&previous));
-    std::cout << "Just set the name of the current env's function\n\n";
   }
 
+#ifdef DEBUG_ENV_CODE
   // Debug the current env
   std::cout << "Current env's function name: ";
   if (currentEnvironment->getFunction()->getName() == NULL) {
@@ -142,6 +148,7 @@ void Compiler::function(FunctionType type) {
   } else {
     std::cout << currentEnvironment->getEnclosing()->getFunction()->getName()->getChars() << '\n';
   }
+#endif // DEBUG_ENV_CODE
 
   beginScope();
 
@@ -355,6 +362,7 @@ void Compiler::block() {
 void Compiler::beginScope() {
   currentEnvironment->incrementScopeDepth();
 
+#ifdef DEBUG_ENV_CODE
   // Debug the current env
   std::cout << "Just incremented scope depth" << '\n';
   std::cout << "Current env's function name: ";
@@ -370,6 +378,7 @@ void Compiler::beginScope() {
     std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
   }
   std::cout << '\n';
+#endif // DEBUG_ENV_CODE
 }
 
 void Compiler::endScope() {
@@ -767,6 +776,7 @@ void Compiler::declareVariable() {
 
   currentEnvironment->addLocal(*name);
 
+#ifdef DEBUG_ENV_CODE
   // Debug the current env
   std::cout << "Just added local to current env" << '\n';
   std::cout << "Current env's function name: ";
@@ -782,6 +792,7 @@ void Compiler::declareVariable() {
     std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
   }
   std::cout << '\n';
+#endif // DEBUG_ENV_CODE
 }
 
 bool Compiler::identifiersEqual(Token* a, Token* b) {
@@ -801,11 +812,14 @@ void Compiler::defineVariable(uint8_t global) {
 void Compiler::markInitialised() {
   if (currentEnvironment->getScopeDepth() == 0) return;
 
+#ifdef DEBUG_ENV_CODE
   std::cout << "Depth of local at index " << currentEnvironment->getLocalCount() - 1 << ": " <<
             currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1)->depth << '\n';
+#endif // DEBUG_ENV_CODE
 
   currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1)->depth = currentEnvironment->getScopeDepth();
 
+#ifdef DEBUG_ENV_CODE
   // Debug the current env
   std::cout << "Just updated the depth of the local at index " << currentEnvironment->getLocalCount()-1 << '\n';
   std::cout << "New depth: " << currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1)->depth << '\n';
@@ -823,6 +837,7 @@ void Compiler::markInitialised() {
     std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
   }
   std::cout << '\n';
+#endif // DEBUG_ENV_CODE
 }
 
 void Compiler::consume(TokenType type, const std::string &message) {
@@ -885,6 +900,7 @@ FunctionObject* Compiler::endCompiler() {
   emitReturn();
   FunctionObject* function = currentEnvironment->getFunction();
 
+#ifdef DEBUG_ENV_CODE
   // Debug the current env
   std::cout << "Just got the current env's function\n";
   std::cout << "Current env's function name: ";
@@ -900,11 +916,13 @@ FunctionObject* Compiler::endCompiler() {
     std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
   }
   std::cout << '\n';
+#endif // DEBUG_ENV_CODE
 
 #ifdef DEBUG_PRINT_CODE
   if (!hadError) currentChunk()->disassemble();
 #endif // DEBUG_PRINT_CODE
 
+#ifdef DEBUG_ENV_CODE
   // Debug the current env
   std::cout << "\nEnclosing env's function name: ";
   if (currentEnvironment->getEnclosing() == NULL) {
@@ -914,10 +932,11 @@ FunctionObject* Compiler::endCompiler() {
   } else {
     std::cout << currentEnvironment->getEnclosing()->getFunction()->getName()->getChars() << '\n';
   }
+#endif // DEBUG_ENV_CODE
 
-  // I think this line was wrong.
   currentEnvironment = currentEnvironment->getEnclosing();
 
+#ifdef DEBUG_ENV_CODE
   // Debug the current env
   std::cout << "Just set current env to the enclosing env\n";
   std::cout << "Current env's function name: ";
@@ -942,6 +961,7 @@ FunctionObject* Compiler::endCompiler() {
     }
     std::cout << '\n';
   }
+#endif // DEBUG_ENV_CODE
 
   return function;
 }

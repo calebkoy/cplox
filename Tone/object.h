@@ -8,6 +8,7 @@ enum ObjectType {
   OBJECT_FUNCTION,
   OBJECT_NATIVE,
   OBJECT_STRING,
+  OBJECT_UPVALUE
 };
 
 // Q: should this class be thought of as abstract?

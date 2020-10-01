@@ -91,6 +91,11 @@ bool Value::isNative() const {
   return isObject() && asObject()->getType() == OBJECT_NATIVE;
 }
 
+bool Value::isUpvalue() const {
+  // Q: should some/all of this functionality belong to class Object?
+  return isObject() && asObject()->getType() == OBJECT_UPVALUE;
+}
+
 bool Value::isClosure() const {
   // Q: should some/all of this functionality belong to class Object?
   return isObject() && asObject()->getType() == OBJECT_CLOSURE;

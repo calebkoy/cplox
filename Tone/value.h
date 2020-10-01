@@ -51,6 +51,7 @@ public:
   bool isFunction() const;
   bool isClosure()const;
   bool isNative() const;
+  bool isUpvalue() const;
   bool isFalsey();
   ObjectType getObjectType();
 
@@ -80,6 +81,8 @@ public:
           out << "<native fn>";
         } else if (value.isClosure()) {
           out << value.getClosureFunctionName();
+        } else if (value.isUpvalue()) {
+          out << "upvalue";
         } else {
           // Q: related to the above question:
           // What, if anything, should be done here?

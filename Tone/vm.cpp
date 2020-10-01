@@ -98,6 +98,18 @@ InterpretResult VM::run() {
         break;
       }
 
+      case OP_GET_UPVALUE: {
+        uint8_t slot = readByte(frame);
+        stack.push(*frame->closure->getUpvalue(slot)->getLocation());
+        break;
+      }
+
+      case OP_SET_UPVALUE: {
+        uint8_t slot = readByte(frame);
+        frame->closure->getUpvalue(slot)->setLocationValue(stack.peek(0));
+        break;
+      }
+
       case OP_EQUAL: {
         Value b = stack.pop();
         Value a = stack.pop();
@@ -206,6 +218,17 @@ InterpretResult VM::run() {
         FunctionObject* function = AS_FUNCTION(readConstant(frame).asObject());
         ClosureObject* closure = new ClosureObject(function); // Q: how do I avoid memory leaks here?
         stack.push(Value{ closure });
+
+        for (int i = 0; i < closure->getFunction()->getUpvalueCount(); i++) {
+          uint8_t isLocal = readByte(frame);
+          uint8_t index = readByte(frame);
+          if (isLocal) {
+            closure->setUpvalue(i, captureUpvalue(frame->slots + index));
+          } else {
+            closure->setUpvalue(i, frame->closure->getUpvalue(index));
+          }
+        }
+
         break;
       }
 
@@ -410,6 +433,11 @@ bool VM::call(ClosureObject* closure, int argCount) {
 
   frame->slots = stack.getTop() - argCount - 1; // Q: does this work?
   return true;
+}
+
+UpvalueObject* VM::captureUpvalue(Value* local) {
+  UpvalueObject* createdUpvalue = new UpvalueObject{ local }; // Q: how to avoid memory leaks?
+  return createdUpvalue;
 }
 
 CallFrame* VM::getCallFrames() {
