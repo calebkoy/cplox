@@ -24,8 +24,15 @@ Environment::Environment(FunctionType type, Environment* environment) : scopeDep
   // Q: is token copied when it's put inside local?
   // If not, what happens to token when the constructor ends?
   Token token;
-  token.lexeme = "";
-  Local local = { token, 0 };
+  if (type != TYPE_FUNCTION) {
+    token.lexeme = "this";
+    token.length = 4; // Q: is it necessary to set length?
+  } else {
+    token.lexeme = "";
+    token.length = 0; // Q: is it necessary to set length?
+  }
+
+  Local local = { token, 0, false };
   localCount++;
 }
 

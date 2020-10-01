@@ -10,3 +10,7 @@ BoundMethodObject::BoundMethodObject(Value receiver, ClosureObject* method) : Ob
 ClosureObject* BoundMethodObject::getMethod() {
   return method;
 }
+
+Value BoundMethodObject::getReceiver() {
+  return receiver; // Q: ok to return like this?
+}

@@ -14,6 +14,7 @@ public:
   BoundMethodObject(Value receiver, ClosureObject* method);
 
   ClosureObject* getMethod();
+  Value getReceiver();
 };
 
 #endif // BOUND_METHOD_OBJECT_H

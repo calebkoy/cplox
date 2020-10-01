@@ -18,6 +18,7 @@ Compiler::Compiler(const std::vector<Token> tokens,
   tokens{ tokens }, objects{ objects }, strings{ strings } {
 
   currentEnvironment = new Environment(TYPE_SCRIPT, nullptr); // Q: how can I prevent memory leaks?
+  currentClassEnvironment = nullptr;
 }
 
 FunctionObject* Compiler::compile() {
@@ -202,6 +203,11 @@ void Compiler::classDeclaration() {
   emitBytes(OP_CLASS, nameConstant);
   defineVariable(nameConstant);
 
+  ClassEnvironment classEnvironment;
+  classEnvironment.name = previous;
+  classEnvironment.enclosing = currentClassEnvironment;
+  currentClassEnvironment = &classEnvironment;
+
   namedVariable(className, false);
   consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
   while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
@@ -209,13 +215,15 @@ void Compiler::classDeclaration() {
   }
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
   emitByte(OP_POP);
+
+  currentClassEnvironment = currentClassEnvironment->enclosing;
 }
 
 void Compiler::method() {
   consume(TOKEN_IDENTIFIER, "Expect method name.");
   uint8_t constant = identifierConstant(&previous);
 
-  FunctionType type = TYPE_FUNCTION; // is the variable needed?
+  FunctionType type = TYPE_METHOD; // is the variable needed?
   function(type);
   emitBytes(OP_METHOD, constant);
 }
@@ -532,7 +540,7 @@ void Compiler::invokePrefixRule(bool canAssign) {
     case TOKEN_PRINT: break;
     case TOKEN_RETURN: break;
     case TOKEN_SUPER: break;
-    case TOKEN_THIS: break;
+    case TOKEN_THIS: this_(); break;
     case TOKEN_TRUE: literal(); break;
     case TOKEN_VAR: break;
     case TOKEN_WHILE: break;
@@ -624,6 +632,14 @@ void Compiler::or_() {
 
   parsePrecedence(PRECEDENCE_OR);
   patchJump(endJump);
+}
+
+void Compiler::this_() {
+  if (currentClassEnvironment == NULL) {
+    error("Cannot use 'this' outside of a class.");
+    return;
+  }
+  variable(false);
 }
 
 void Compiler::call() {

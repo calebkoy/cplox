@@ -162,16 +162,6 @@ std::string Value::getInstanceClassName() const {
 std::string Value::getBoundMethodName() const {
   BoundMethodObject* boundMethod = (BoundMethodObject*)asObject();
 
-  if (boundMethod->getMethod() == NULL) {
-    std::cout << "bound method's method is null\n";
-  } else if (boundMethod->getMethod()->getFunction() == NULL) {
-    std::cout << "bound method's method's function is null\n";
-  } else if (boundMethod->getMethod()->getFunction()->getName() == NULL) {
-    std::cout << "bound method's method's function's name is null\n";
-  } else {
-    std::cout << "bound method's method's function's name is " << boundMethod->getMethod()->getFunction()->getName()->getChars() << '\n';
-  }
-
   // Q: is it possible for any of these pointers to be null?
   return boundMethod->getMethod()->getFunction()->getName()->getChars();
 }

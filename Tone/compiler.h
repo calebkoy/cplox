@@ -30,9 +30,15 @@ struct ParseRule {
   Precedence precedence;
 };
 
+struct ClassEnvironment {
+  struct ClassEnvironment* enclosing;
+  Token name;
+};
+
 class Compiler {
   const std::vector<Token> tokens;
   Environment* currentEnvironment; // Q: should this be a pointer?
+  ClassEnvironment* currentClassEnvironment;
   Object* objects;
   std::unordered_map<std::string, Value> *strings; // Q: should this be a pointer?
   Token current;
@@ -92,6 +98,7 @@ class Compiler {
   void binary();
   void and_();
   void or_();
+  void this_();
   void call();
   void dot(bool canAssign);
   void method();

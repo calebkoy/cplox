@@ -486,6 +486,8 @@ bool VM::callValue(Value callee, int argCount) {
     switch (callee.getObjectType()) {
       case OBJECT_BOUND_METHOD: {
         BoundMethodObject* bound = AS_BOUND_METHOD(callee.asObject());
+        Value* valueToSet = stack.getTop() - argCount - 1;
+        *valueToSet = bound->getReceiver();
         return call(bound->getMethod(), argCount);
       }
 
