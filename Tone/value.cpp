@@ -2,6 +2,7 @@
 
 #include "closureobject.h"
 #include "functionobject.h"
+#include "instanceobject.h"
 #include "value.h"
 
 // Q: does it matter that this logic was somewhat arbitrarily chosen?
@@ -60,6 +61,12 @@ StringObject* Value::asString() const {
   return (StringObject*)asObject();
 }
 
+ClassObject* Value::asClass() const {
+  // Q: what to do if the Value doesn't contain
+  // a pointer to a valid ClassObject on the heap?
+  return (ClassObject*)asObject();
+}
+
 bool Value::isBool() {
   return type == VAL_BOOL;
 }
@@ -101,6 +108,16 @@ bool Value::isClosure() const {
   return isObject() && asObject()->getType() == OBJECT_CLOSURE;
 }
 
+bool Value::isClass() const {
+  // Q: should some/all of this functionality belong to class Object?
+  return isObject() && asObject()->getType() == OBJECT_CLASS;
+}
+
+bool Value::isInstance() const {
+  // Q: should some/all of this functionality belong to class Object?
+  return isObject() && asObject()->getType() == OBJECT_INSTANCE;
+}
+
 bool Value::isFalsey() {
   return isNull() || (isBool() && !asBool());
 }
@@ -131,4 +148,9 @@ std::string Value::getClosureFunctionName() const {
   } else {
     return "<fn " + closure->getFunction()->getName()->getChars() + ">";
   }
+}
+
+std::string Value::getInstanceClassName() const {
+  InstanceObject* instance = (InstanceObject*)asObject();
+  return instance->getKlass()->getName()->getChars() + " instance";
 }

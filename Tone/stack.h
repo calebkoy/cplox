@@ -19,6 +19,7 @@ public:
   Value at(int slot);
   void set(int slot, Value value); // Q: Is passing value by value best here?
   void print();
+  int getSize();
 
   Value* getTop();
 

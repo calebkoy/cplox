@@ -7,6 +7,7 @@
 
 #include "object.h"
 #include "stringobject.h"
+#include "classobject.h"
 
 typedef enum {
   VAL_BOOL,
@@ -42,6 +43,7 @@ public:
   double asNumber() const;
   Object* asObject() const;
   StringObject* asString() const;
+  ClassObject* asClass() const;
 
   bool isBool();
   bool isNull();
@@ -52,12 +54,15 @@ public:
   bool isClosure()const;
   bool isNative() const;
   bool isUpvalue() const;
+  bool isClass() const;
+  bool isInstance() const;
   bool isFalsey();
   ObjectType getObjectType();
 
   // Q: is this the right place for these? Especially bec. their main use is for printing.
   std::string getFunctionName() const;
   std::string getClosureFunctionName() const;
+  std::string getInstanceClassName() const;
 
   ValueType getType();
 
@@ -83,6 +88,10 @@ public:
           out << value.getClosureFunctionName();
         } else if (value.isUpvalue()) {
           out << "upvalue";
+        } else if (value.isInstance()) {
+          out << value.getInstanceClassName();
+        } else if (value.isClass()) {
+          out << value.asClass()->getName()->getChars();
         } else {
           // Q: related to the above question:
           // What, if anything, should be done here?

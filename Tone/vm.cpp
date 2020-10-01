@@ -4,6 +4,7 @@
 #include "vm.h"
 #include "nativeobject.h"
 #include "closureobject.h"
+#include "instanceobject.h"
 
 #define DEBUG_TRACE_EXECUTION
 
@@ -257,6 +258,11 @@ InterpretResult VM::run() {
         frame = &(callFrames[callFrameCount - 1]);
         break;
       }
+
+      case OP_CLASS:
+        ClassObject* classObject = new ClassObject{ readString(frame) }; // Q: how to avoid memory leaks?
+        stack.push(Value{ classObject });
+        break;
     }
   }
 }
@@ -401,6 +407,18 @@ Stack* VM::getStack() {
 bool VM::callValue(Value callee, int argCount) {
   if (callee.isObject()) {
     switch (callee.getObjectType()) {
+      case OBJECT_CLASS: {
+        ClassObject* klass = callee.asClass();
+//        int slot = (int)(stack.getTop() - (argCount) - 1); // Not working
+        InstanceObject* instance = new InstanceObject{ klass };
+        Value value = Value{ instance };
+//        stack.set(slot, value);
+        Value* valueToSet = stack.getTop() - argCount - 1;
+        *valueToSet = value;
+        //stack.set((int)(stack.getTop() - argCount - 1), Value(new InstanceObject{ klass }));
+        return true;
+      }
+
       case OBJECT_CLOSURE: {
         Object* calleeAsObject = callee.asObject();
         return call(AS_CLOSURE(calleeAsObject), argCount);

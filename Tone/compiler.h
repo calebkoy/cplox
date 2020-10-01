@@ -101,6 +101,7 @@ class Compiler {
   void variable(bool canAssign);
   void namedVariable(Token name, bool canAssign);
   void varDeclaration();
+  void classDeclaration();
   uint8_t parseVariable(const std::string &errorMessage);
   uint8_t identifierConstant(Token* name);
   void declareVariable();

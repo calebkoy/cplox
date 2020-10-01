@@ -43,6 +43,10 @@ void Stack::print() {
   }
 }
 
+int Stack::getSize() {
+  return (int)arr.size(); // Q: is cast ok?
+}
+
 Value* Stack::getTop() {
   return top;
 }

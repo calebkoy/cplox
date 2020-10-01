@@ -104,6 +104,8 @@ int Chunk::disassembleInstruction(int offset) {
       return disassembleSimpleInstruction("OP_CLOSE_UPVALUE", offset);
     case OP_RETURN:
       return disassembleSimpleInstruction("OP_RETURN", offset);
+    case OP_CLASS:
+      return disassembleConstantInstruction("OP_CLASS", offset);
     default:
       std::cout << "Unknown opcode " << instruction << '\n';
       return offset + 1;
