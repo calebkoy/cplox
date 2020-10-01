@@ -14,6 +14,12 @@ public:
   InstanceObject(); // Q: should the default constructor be deleted?
   InstanceObject(ClassObject* klass);
 
+  bool hasField(const std::string &name);
+
+  Value getField(const std::string &name);
+
+  void setField(const std::string &name, Value value); // Q: should I pass value by value?
+
   ClassObject* getKlass();
 };
 

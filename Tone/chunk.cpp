@@ -57,6 +57,10 @@ int Chunk::disassembleInstruction(int offset) {
       return disassembleByteInstruction("OP_GET_UPVALUE", offset);
     case OP_SET_UPVALUE:
       return disassembleByteInstruction("OP_SET_UPVALUE", offset);
+    case OP_GET_PROPERTY:
+      return disassembleConstantInstruction("OP_GET_PROPERTY", offset);
+    case OP_SET_PROPERTY:
+      return disassembleConstantInstruction("OP_SET_PROPERTY", offset);
     case OP_EQUAL:
       return disassembleSimpleInstruction("OP_EQUAL", offset);
     case OP_GREATER:

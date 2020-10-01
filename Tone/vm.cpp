@@ -11,6 +11,7 @@
 #define AS_FUNCTION(object)  ((FunctionObject*)(object)) // Q: is there a better way of doing this than a macro?
 #define AS_CLOSURE(object)  ((ClosureObject*)(object)) // Q: ditto
 #define AS_NATIVE(object)        (((NativeObject*)(object))->getFunction()) // Q: ditto
+#define AS_INSTANCE(object)        ((InstanceObject*)(object)) // Q: ditto
 
 VM::VM() {
   objects = nullptr;
@@ -109,6 +110,45 @@ InterpretResult VM::run() {
       case OP_SET_UPVALUE: {
         uint8_t slot = readByte(frame);
         frame->closure->getUpvalue(slot)->setLocationValue(stack.peek(0));
+        break;
+      }
+
+      case OP_GET_PROPERTY: {
+        if (!stack.peek(0).isInstance()) {
+          runtimeError("Only instances have properties.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        InstanceObject* instance = AS_INSTANCE(stack.peek(0).asObject());
+        StringObject* name = readString(frame);
+
+        Value value;
+
+        if (instance->hasField(name->getChars())) {
+          value = instance->getField(name->getChars()); // Q: should we be getting a pointer back?
+          stack.pop();
+          stack.push(value);
+          break;
+        }
+
+        runtimeError("Undefined property '%s'.", name->getChars());
+        return INTERPRET_RUNTIME_ERROR;
+      }
+
+      case OP_SET_PROPERTY: {
+        if (!stack.peek(1).isInstance()) {
+          runtimeError("Only instances have fields.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        InstanceObject* instance = AS_INSTANCE(stack.peek(1).asObject());
+
+        // Q: does this correctly handle the case where the field already exists?
+        instance->setField(readString(frame)->getChars(), stack.peek(0));
+
+        Value value = stack.pop();
+        stack.pop();
+        stack.push(value);
         break;
       }
 

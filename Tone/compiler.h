@@ -46,7 +46,7 @@ class Compiler {
     {TOKEN_LEFT_BRACE, PRECEDENCE_NONE},
     {TOKEN_RIGHT_BRACE, PRECEDENCE_NONE},
     {TOKEN_COMMA, PRECEDENCE_NONE},
-    {TOKEN_DOT, PRECEDENCE_NONE},
+    {TOKEN_DOT, PRECEDENCE_CALL},
     {TOKEN_MINUS, PRECEDENCE_TERM},
     {TOKEN_PLUS, PRECEDENCE_TERM},
     {TOKEN_SEMICOLON, PRECEDENCE_NONE},
@@ -93,6 +93,7 @@ class Compiler {
   void and_();
   void or_();
   void call();
+  void dot(bool canAssign);
   uint8_t argumentList();
   void literal();
   void declaration();

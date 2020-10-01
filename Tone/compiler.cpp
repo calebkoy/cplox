@@ -545,6 +545,9 @@ void Compiler::invokeInfixRule(bool canAssign) {
 
     case TOKEN_AND: and_(); break;
     case TOKEN_OR: or_(); break;
+
+    case TOKEN_DOT: dot(canAssign); break;
+
     case TOKEN_LEFT_PAREN: call(); break;
 
 
@@ -552,7 +555,6 @@ void Compiler::invokeInfixRule(bool canAssign) {
     case TOKEN_LEFT_BRACE:
     case TOKEN_RIGHT_BRACE:
     case TOKEN_COMMA:
-    case TOKEN_DOT:
     case TOKEN_SEMICOLON:
     case TOKEN_BANG:
     case TOKEN_EQUAL:
@@ -612,6 +614,18 @@ void Compiler::or_() {
 void Compiler::call() {
   uint8_t argCount = argumentList();
   emitBytes(OP_CALL, argCount);
+}
+
+void Compiler::dot(bool canAssign) {
+  consume(TOKEN_IDENTIFIER, "Expect property name after '.'.");
+  uint8_t name = identifierConstant(&previous);
+
+  if (canAssign && match(TOKEN_EQUAL)) {
+    expression();
+    emitBytes(OP_SET_PROPERTY, name);
+  } else {
+    emitBytes(OP_GET_PROPERTY, name);
+  }
 }
 
 uint8_t Compiler::argumentList() {
