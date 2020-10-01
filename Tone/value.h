@@ -53,6 +53,7 @@ public:
   bool isNative() const;
   bool isUpvalue() const;
   bool isClass() const;
+  bool isBoundMethod() const;
   bool isInstance() const;
   bool isFalsey();
   ObjectType getObjectType();
@@ -62,6 +63,7 @@ public:
   std::string getClosureFunctionName() const;
   std::string getInstanceClassName() const;
   std::string getClassName() const;
+  std::string getBoundMethodName() const;
 
   ValueType getType();
 
@@ -91,6 +93,8 @@ public:
           out << value.getInstanceClassName();
         } else if (value.isClass()) {
           out << value.getClassName();
+        } else if (value.isBoundMethod()) {
+          out << value.getBoundMethodName();
         } else {
           // Q: related to the above question:
           // What, if anything, should be done here?

@@ -8,6 +8,7 @@
 #include "value.h"
 #include "closureobject.h"
 #include "nativeobject.h"
+#include "classobject.h"
 
 enum InterpretResult {
   INTERPRET_OK,
@@ -64,6 +65,7 @@ class VM {
   UpvalueObject* captureUpvalue(Value* local);
   void closeUpvalues(Value* last);
   void defineMethod(StringObject* name);
+  bool bindMethod(ClassObject* klass, StringObject* name);
   //void defineNative(const std::string &name, nativeFunctionPointer function); // Q: try to get this to work?
   StringObject* copyString(const std::string &name);
 

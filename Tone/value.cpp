@@ -4,6 +4,7 @@
 #include "functionobject.h"
 #include "instanceobject.h"
 #include "value.h"
+#include "boundmethodobject.h"
 
 // Q: does it matter that this logic was somewhat arbitrarily chosen?
 Value::Value() {
@@ -112,6 +113,11 @@ bool Value::isInstance() const {
   return isObject() && asObject()->getType() == OBJECT_INSTANCE;
 }
 
+bool Value::isBoundMethod() const {
+  // Q: should some/all of this functionality belong to class Object?
+  return isObject() && asObject()->getType() == OBJECT_BOUND_METHOD;
+}
+
 bool Value::isFalsey() {
   return isNull() || (isBool() && !asBool());
 }
@@ -151,4 +157,21 @@ std::string Value::getClosureFunctionName() const {
 std::string Value::getInstanceClassName() const {
   InstanceObject* instance = (InstanceObject*)asObject();
   return instance->getKlass()->getName()->getChars() + " instance";
+}
+
+std::string Value::getBoundMethodName() const {
+  BoundMethodObject* boundMethod = (BoundMethodObject*)asObject();
+
+  if (boundMethod->getMethod() == NULL) {
+    std::cout << "bound method's method is null\n";
+  } else if (boundMethod->getMethod()->getFunction() == NULL) {
+    std::cout << "bound method's method's function is null\n";
+  } else if (boundMethod->getMethod()->getFunction()->getName() == NULL) {
+    std::cout << "bound method's method's function's name is null\n";
+  } else {
+    std::cout << "bound method's method's function's name is " << boundMethod->getMethod()->getFunction()->getName()->getChars() << '\n';
+  }
+
+  // Q: is it possible for any of these pointers to be null?
+  return boundMethod->getMethod()->getFunction()->getName()->getChars();
 }

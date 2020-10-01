@@ -5,6 +5,7 @@
 #include "nativeobject.h"
 #include "closureobject.h"
 #include "instanceobject.h"
+#include "boundmethodobject.h"
 
 #define DEBUG_TRACE_EXECUTION
 
@@ -13,6 +14,7 @@
 #define AS_NATIVE(object)        (((NativeObject*)(object))->getFunction()) // Q: ditto
 #define AS_INSTANCE(object)        ((InstanceObject*)(object)) // Q: ditto
 #define AS_CLASS(object)        ((ClassObject*)(object)) // Q: ditto
+#define AS_BOUND_METHOD(object)        ((BoundMethodObject*)(object)) // Q: ditto
 
 VM::VM() {
   objects = nullptr;
@@ -132,8 +134,10 @@ InterpretResult VM::run() {
           break;
         }
 
-        runtimeError("Undefined property '%s'.", name->getChars());
-        return INTERPRET_RUNTIME_ERROR;
+        if (!bindMethod(instance->getKlass(), name)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        break;
       }
 
       case OP_SET_PROPERTY: {
@@ -409,6 +413,25 @@ void VM::defineMethod(StringObject* name) {
   stack.pop();
 }
 
+bool VM::bindMethod(ClassObject* klass, StringObject* name) {
+  Value method;
+
+  if (!klass->findMethod(name->getChars())) {
+    runtimeError("Undefined property '%s'.", name->getChars());
+    return false;
+  }
+
+  method = klass->getMethod(name->getChars());
+
+  // Todo: I think the error is here. I don't think method is actually being bound.
+
+  // Q: avoid memory leaks?
+  BoundMethodObject* bound = new BoundMethodObject(stack.peek(0), AS_CLOSURE(method.asObject()));
+  stack.pop();
+  stack.push(Value{ bound });
+  return true;
+}
+
 bool VM::valuesEqual(Value a, Value b) {
   if (a.getType() != b.getType()) return false;
 
@@ -461,6 +484,11 @@ Stack* VM::getStack() {
 bool VM::callValue(Value callee, int argCount) {
   if (callee.isObject()) {
     switch (callee.getObjectType()) {
+      case OBJECT_BOUND_METHOD: {
+        BoundMethodObject* bound = AS_BOUND_METHOD(callee.asObject());
+        return call(bound->getMethod(), argCount);
+      }
+
       case OBJECT_CLASS: {
         ClassObject* klass = AS_CLASS(callee.asObject());
 //        int slot = (int)(stack.getTop() - (argCount) - 1); // Not working

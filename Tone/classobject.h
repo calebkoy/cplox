@@ -18,6 +18,8 @@ public:
   ClassObject(StringObject* name);
 
   void setMethod(const std::string &name, Value method);
+  Value getMethod(const std::string &name);
+  bool findMethod(const std::string &name);
 
   StringObject* getName();
 };
