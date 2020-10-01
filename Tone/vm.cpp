@@ -12,6 +12,7 @@
 #define AS_CLOSURE(object)  ((ClosureObject*)(object)) // Q: ditto
 #define AS_NATIVE(object)        (((NativeObject*)(object))->getFunction()) // Q: ditto
 #define AS_INSTANCE(object)        ((InstanceObject*)(object)) // Q: ditto
+#define AS_CLASS(object)        ((ClassObject*)(object)) // Q: ditto
 
 VM::VM() {
   objects = nullptr;
@@ -299,10 +300,16 @@ InterpretResult VM::run() {
         break;
       }
 
-      case OP_CLASS:
+      case OP_CLASS: {
         ClassObject* classObject = new ClassObject{ readString(frame) }; // Q: how to avoid memory leaks?
         stack.push(Value{ classObject });
         break;
+      }
+
+      case OP_METHOD: {
+        defineMethod(readString(frame));
+        break;
+      }
     }
   }
 }
@@ -395,6 +402,13 @@ void VM::runtimeError(const char* format, ...) {
   openUpvalues = nullptr;
 }
 
+void VM::defineMethod(StringObject* name) {
+  Value method = stack.peek(0);
+  ClassObject* klass = AS_CLASS(stack.peek(1).asObject());
+  klass->setMethod(name->getChars(), method);
+  stack.pop();
+}
+
 bool VM::valuesEqual(Value a, Value b) {
   if (a.getType() != b.getType()) return false;
 
@@ -448,7 +462,7 @@ bool VM::callValue(Value callee, int argCount) {
   if (callee.isObject()) {
     switch (callee.getObjectType()) {
       case OBJECT_CLASS: {
-        ClassObject* klass = callee.asClass();
+        ClassObject* klass = AS_CLASS(callee.asObject());
 //        int slot = (int)(stack.getTop() - (argCount) - 1); // Not working
         InstanceObject* instance = new InstanceObject{ klass };
         Value value = Value{ instance };

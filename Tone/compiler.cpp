@@ -195,14 +195,29 @@ void Compiler::varDeclaration() {
 
 void Compiler::classDeclaration() {
   consume(TOKEN_IDENTIFIER, "Expect class name.");
+  Token className = previous;
   uint8_t nameConstant = identifierConstant(&previous);
   declareVariable();
 
   emitBytes(OP_CLASS, nameConstant);
   defineVariable(nameConstant);
 
+  namedVariable(className, false);
   consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+  while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+    method();
+  }
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+  emitByte(OP_POP);
+}
+
+void Compiler::method() {
+  consume(TOKEN_IDENTIFIER, "Expect method name.");
+  uint8_t constant = identifierConstant(&previous);
+
+  FunctionType type = TYPE_FUNCTION; // is the variable needed?
+  function(type);
+  emitBytes(OP_METHOD, constant);
 }
 
 uint8_t Compiler::parseVariable(const std::string &errorMessage) {

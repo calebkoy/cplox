@@ -5,6 +5,7 @@
 
 #include "object.h"
 #include "value.h"
+#include "classobject.h"
 
 class InstanceObject : public Object {
   ClassObject* klass;

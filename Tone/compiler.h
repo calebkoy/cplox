@@ -94,6 +94,7 @@ class Compiler {
   void or_();
   void call();
   void dot(bool canAssign);
+  void method();
   uint8_t argumentList();
   void literal();
   void declaration();

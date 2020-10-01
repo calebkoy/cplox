@@ -61,12 +61,6 @@ StringObject* Value::asString() const {
   return (StringObject*)asObject();
 }
 
-ClassObject* Value::asClass() const {
-  // Q: what to do if the Value doesn't contain
-  // a pointer to a valid ClassObject on the heap?
-  return (ClassObject*)asObject();
-}
-
 bool Value::isBool() {
   return type == VAL_BOOL;
 }
@@ -136,6 +130,10 @@ std::string Value::getFunctionName() const {
   if (name == NULL) return "<script>"; // Q: could this be == nullptr?
 
   return name->getChars();
+}
+
+std::string Value::getClassName() const {
+  return ((ClassObject*)asObject())->getName()->getChars();
 }
 
 std::string Value::getClosureFunctionName() const {

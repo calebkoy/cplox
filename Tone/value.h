@@ -7,7 +7,6 @@
 
 #include "object.h"
 #include "stringobject.h"
-#include "classobject.h"
 
 typedef enum {
   VAL_BOOL,
@@ -43,7 +42,6 @@ public:
   double asNumber() const;
   Object* asObject() const;
   StringObject* asString() const;
-  ClassObject* asClass() const;
 
   bool isBool();
   bool isNull();
@@ -63,6 +61,7 @@ public:
   std::string getFunctionName() const;
   std::string getClosureFunctionName() const;
   std::string getInstanceClassName() const;
+  std::string getClassName() const;
 
   ValueType getType();
 
@@ -91,7 +90,7 @@ public:
         } else if (value.isInstance()) {
           out << value.getInstanceClassName();
         } else if (value.isClass()) {
-          out << value.asClass()->getName()->getChars();
+          out << value.getClassName();
         } else {
           // Q: related to the above question:
           // What, if anything, should be done here?

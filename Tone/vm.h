@@ -63,6 +63,7 @@ class VM {
   bool call(ClosureObject* closure, int argCount);
   UpvalueObject* captureUpvalue(Value* local);
   void closeUpvalues(Value* last);
+  void defineMethod(StringObject* name);
   //void defineNative(const std::string &name, nativeFunctionPointer function); // Q: try to get this to work?
   StringObject* copyString(const std::string &name);
 
