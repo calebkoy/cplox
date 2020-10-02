@@ -36,6 +36,7 @@ enum OpCode {
   OP_JUMP_IF_FALSE,
   OP_LOOP,
   OP_CALL,
+  OP_INVOKE,
   OP_CLOSURE,
   OP_CLOSE_UPVALUE,
   OP_RETURN,
@@ -57,6 +58,7 @@ class Chunk {
   int disassembleConstantInstruction(const std::string& name, int offset);
   int disassembleByteInstruction(const std::string& name, int offset);
   int disassembleJumpInstruction(const std::string& name, int sign, int offset);
+  int disassembleInvokeInstruction(const std::string& name, int offset);
 
 public:
   void appendByte(uint8_t byte, int line);

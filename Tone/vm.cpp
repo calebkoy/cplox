@@ -264,6 +264,16 @@ InterpretResult VM::run() {
         break;
       }
 
+      case OP_INVOKE: {
+        StringObject* method = readString(frame);
+        int argCount = readByte(frame);
+        if (!invoke(method, argCount)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        frame = &(callFrames[callFrameCount - 1]);
+        break;
+      }
+
       case OP_CLOSURE: {
         FunctionObject* function = AS_FUNCTION(readConstant(frame).asObject());
         ClosureObject* closure = new ClosureObject(function); // Q: how do I avoid memory leaks here?
@@ -433,6 +443,41 @@ bool VM::bindMethod(ClassObject* klass, StringObject* name) {
   stack.pop();
   stack.push(Value{ bound });
   return true;
+}
+
+bool VM::invoke(StringObject* name, int argCount) {
+  Value receiver = stack.peek(argCount);
+
+  if (!receiver.isInstance()) {
+    runtimeError("Only instances have methods.");
+    return false;
+  }
+
+  InstanceObject* instance = AS_INSTANCE(receiver.asObject());
+
+  Value value;
+
+  if (instance->hasField(name->getChars())) {
+    value = instance->getField(name->getChars());
+    Value* valueToSet = stack.getTop() - argCount - 1;
+    *valueToSet = value;
+    return callValue(value, argCount);
+  }
+
+  return invokeFromClass(instance->getKlass(), name, argCount);
+}
+
+bool VM::invokeFromClass(ClassObject* klass, StringObject* name, int argCount) {
+  Value method;
+
+  if (klass->findMethod(name->getChars())) {
+    method = klass->getMethod(name->getChars());
+  } else {
+    runtimeError("Undefined property '%s'.", name->getChars());
+    return false;
+  }
+
+  return call(AS_CLOSURE(method.asObject()), argCount);
 }
 
 bool VM::valuesEqual(Value a, Value b) {

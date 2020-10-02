@@ -89,6 +89,8 @@ int Chunk::disassembleInstruction(int offset) {
       return disassembleJumpInstruction("OP_LOOP", -1, offset);
     case OP_CALL:
       return disassembleByteInstruction("OP_CALL", offset);
+    case OP_INVOKE:
+      return disassembleInvokeInstruction("OP_INVOKE", offset);
     case OP_CLOSURE: {
       offset++;
       uint8_t constant = bytecode.at(offset++);
@@ -138,6 +140,14 @@ int Chunk::disassembleByteInstruction(const std::string& name, int offset) {
   uint8_t slot = bytecode.at(offset + 1);
   std::cout << name << " " << +slot << '\n';
   return offset + 2;
+}
+
+int Chunk::disassembleInvokeInstruction(const std::string& name, int offset) {
+  uint8_t constant = bytecode.at(offset + 1);
+  uint8_t argCount = bytecode.at(offset + 2);
+  std::cout << name << " (" << argCount << " args) " << " " << +constant << " '";
+  std::cout << constants.at(constant) << '\n';
+  return offset + 3;
 }
 
 int Chunk::disassembleJumpInstruction(const std::string& name, int sign, int offset) {
