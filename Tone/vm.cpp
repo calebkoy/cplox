@@ -20,10 +20,12 @@ VM::VM() {
   objects = nullptr;
   openUpvalues = nullptr;
   callFrameCount = 0;
+  initString = copyString("init");
   //defineNative("clock", this->clockNative);
 }
 
 VM::VM(Object* objects) : callFrameCount{ 0 }, objects{ objects }, openUpvalues{ nullptr } {
+  initString = copyString("init");
   //defineNative("clock", clockNative);
 }
 
@@ -71,6 +73,7 @@ InterpretResult VM::run() {
 
       case OP_GET_GLOBAL: {
         StringObject* name = readString(frame);
+        std::cout << "\nDebugging: \nName of global var to get is: " << name->getChars() << "\n\n";
         Value value;
         std::unordered_map<std::string, Value>::iterator it = globals.find(name->getChars());
         if (it == globals.end()) {
@@ -493,13 +496,21 @@ bool VM::callValue(Value callee, int argCount) {
 
       case OBJECT_CLASS: {
         ClassObject* klass = AS_CLASS(callee.asObject());
-//        int slot = (int)(stack.getTop() - (argCount) - 1); // Not working
         InstanceObject* instance = new InstanceObject{ klass };
         Value value = Value{ instance };
-//        stack.set(slot, value);
         Value* valueToSet = stack.getTop() - argCount - 1;
         *valueToSet = value;
-        //stack.set((int)(stack.getTop() - argCount - 1), Value(new InstanceObject{ klass }));
+
+        Value initializer;
+
+        if (klass->findMethod(initString->getChars())) {
+          initializer = klass->getMethod(initString->getChars());
+          return call(AS_CLOSURE(initializer.asObject()), argCount);
+        } else if (argCount != 0) {
+          runtimeError("Expected 0 arguments but got %d.", argCount);
+          return false;
+        }
+
         return true;
       }
 

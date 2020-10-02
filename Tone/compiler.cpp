@@ -224,6 +224,10 @@ void Compiler::method() {
   uint8_t constant = identifierConstant(&previous);
 
   FunctionType type = TYPE_METHOD; // is the variable needed?
+  if (previous.length == 4 &&
+      previous.lexeme.compare("init") == 0) { // Q: is the first condition really necessary?
+    type = TYPE_INITIALIZER;
+  }
   function(type);
   emitBytes(OP_METHOD, constant);
 }
@@ -354,6 +358,10 @@ void Compiler::returnStatement() {
   if (match(TOKEN_SEMICOLON)) {
     emitReturn();
   } else {
+    if (currentEnvironment->getFunctionType() == TYPE_INITIALIZER) {
+      error("Cannot return a value from an initializer.");
+    }
+
     expression();
     consume(TOKEN_SEMICOLON, "Expect ';' after return value.");
     emitByte(OP_RETURN);
@@ -860,6 +868,11 @@ void Compiler::declareVariable() {
 }
 
 bool Compiler::identifiersEqual(Token* a, Token* b) {
+  std::cout << "\nDebugging: \na lexeme: " << a->lexeme;
+  std::cout << "\na length: " << a->length;
+  std::cout << "\nb lexeme: " << b->lexeme;
+  std::cout << "\nb length: " << b->length << "\n\n";
+
   if (a->length != b->length) return false;
   return a->lexeme.compare(b->lexeme) == 0;
 }
@@ -1031,7 +1044,11 @@ FunctionObject* Compiler::endCompiler() {
 }
 
 void Compiler::emitReturn() {
-  emitByte(OP_NULL);
+  if (currentEnvironment->getFunctionType() == TYPE_INITIALIZER) {
+    emitBytes(OP_GET_LOCAL, 0);
+  } else {
+    emitByte(OP_NULL);
+  }
   emitByte(OP_RETURN);
 }
 

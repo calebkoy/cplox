@@ -40,6 +40,7 @@ class VM {
   Object* objects;
 
   UpvalueObject* openUpvalues;
+  StringObject* initString;
 
   uint8_t readByte(CallFrame* frame);
   uint16_t readShort(CallFrame* frame);
