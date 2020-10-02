@@ -22,6 +22,7 @@ public:
   bool findMethod(const std::string &name);
 
   StringObject* getName();
+  std::unordered_map<std::string, Value>* getMethods();
 };
 
 #endif // CLASS_OBJECT_H

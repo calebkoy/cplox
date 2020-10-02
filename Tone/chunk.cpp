@@ -61,6 +61,8 @@ int Chunk::disassembleInstruction(int offset) {
       return disassembleConstantInstruction("OP_GET_PROPERTY", offset);
     case OP_SET_PROPERTY:
       return disassembleConstantInstruction("OP_SET_PROPERTY", offset);
+    case OP_GET_SUPER:
+      return disassembleConstantInstruction("OP_GET_SUPER", offset);
     case OP_EQUAL:
       return disassembleSimpleInstruction("OP_EQUAL", offset);
     case OP_GREATER:
@@ -91,6 +93,8 @@ int Chunk::disassembleInstruction(int offset) {
       return disassembleByteInstruction("OP_CALL", offset);
     case OP_INVOKE:
       return disassembleInvokeInstruction("OP_INVOKE", offset);
+    case OP_SUPER_INVOKE:
+      return disassembleInvokeInstruction("OP_SUPER_INVOKE", offset);
     case OP_CLOSURE: {
       offset++;
       uint8_t constant = bytecode.at(offset++);
@@ -112,6 +116,8 @@ int Chunk::disassembleInstruction(int offset) {
       return disassembleSimpleInstruction("OP_RETURN", offset);
     case OP_CLASS:
       return disassembleConstantInstruction("OP_CLASS", offset);
+    case OP_INHERIT:
+      return disassembleSimpleInstruction("OP_INHERIT", offset);
     case OP_METHOD:
       return disassembleConstantInstruction("OP_METHOD", offset);
     default:

@@ -27,3 +27,7 @@ void ClassObject::setMethod(const std::string &name, Value method) {
 StringObject* ClassObject::getName() {
   return name;
 }
+
+std::unordered_map<std::string, Value>* ClassObject::getMethods() {
+  return &methods;
+}

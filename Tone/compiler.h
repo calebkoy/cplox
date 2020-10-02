@@ -33,6 +33,7 @@ struct ParseRule {
 struct ClassEnvironment {
   struct ClassEnvironment* enclosing;
   Token name;
+  bool hasSuperclass;
 };
 
 class Compiler {
@@ -99,6 +100,7 @@ class Compiler {
   void and_();
   void or_();
   void this_();
+  void super_();
   void call();
   void dot(bool canAssign);
   void method();
@@ -115,6 +117,7 @@ class Compiler {
   uint8_t identifierConstant(Token* name);
   void declareVariable();
   void defineVariable(uint8_t global);
+  Token syntheticToken(const std::string &text);
   void markInitialised();
   void block();
   void beginScope();

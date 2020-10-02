@@ -160,6 +160,15 @@ InterpretResult VM::run() {
         break;
       }
 
+      case OP_GET_SUPER: {
+        StringObject* name = readString(frame);
+        ClassObject* superclass = AS_CLASS(stack.pop().asObject());
+        if (!bindMethod(superclass, name)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        break;
+      }
+
       case OP_EQUAL: {
         Value b = stack.pop();
         Value a = stack.pop();
@@ -274,6 +283,17 @@ InterpretResult VM::run() {
         break;
       }
 
+      case OP_SUPER_INVOKE: {
+        StringObject* method = readString(frame);
+        int argCount = readByte(frame);
+        ClassObject* superclass = AS_CLASS(stack.pop().asObject());
+        if (!invokeFromClass(superclass, method, argCount)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        frame = &(callFrames[callFrameCount - 1]);
+        break;
+      }
+
       case OP_CLOSURE: {
         FunctionObject* function = AS_FUNCTION(readConstant(frame).asObject());
         ClosureObject* closure = new ClosureObject(function); // Q: how do I avoid memory leaks here?
@@ -320,6 +340,21 @@ InterpretResult VM::run() {
       case OP_CLASS: {
         ClassObject* classObject = new ClassObject{ readString(frame) }; // Q: how to avoid memory leaks?
         stack.push(Value{ classObject });
+        break;
+      }
+
+      case OP_INHERIT: {
+        Value superclass = stack.peek(1);
+        if (!superclass.isClass()) {
+          runtimeError("Superclass must be a class.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+
+        ClassObject* subclass = AS_CLASS(stack.peek(0).asObject());
+        ClassObject* superclassAsClass = AS_CLASS(superclass.asObject());
+        std::unordered_map<std::string, Value>* superclassMethods = superclassAsClass->getMethods();
+        subclass->getMethods()->insert(superclassMethods->begin(), superclassMethods->end());
+        stack.pop(); // Subclass.
         break;
       }
 

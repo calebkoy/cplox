@@ -205,8 +205,32 @@ void Compiler::classDeclaration() {
 
   ClassEnvironment classEnvironment;
   classEnvironment.name = previous;
+  classEnvironment.hasSuperclass = false;
   classEnvironment.enclosing = currentClassEnvironment;
   currentClassEnvironment = &classEnvironment;
+
+  if (match(TOKEN_LESS)) {
+    consume(TOKEN_IDENTIFIER, "Expect superclass name.");
+    variable(false);
+
+    if (identifiersEqual(&className, &previous)) {
+      error("A class cannot inherit from itself.");
+    }
+
+    beginScope();
+
+    if (currentEnvironment->localCountAtMax()) {
+      error("Too many local variables in function.");
+    } else {
+      currentEnvironment->addLocal(syntheticToken("super"));
+    }
+
+    defineVariable(0);
+
+    namedVariable(className, false);
+    emitByte(OP_INHERIT);
+    classEnvironment.hasSuperclass = true;
+  }
 
   namedVariable(className, false);
   consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
@@ -216,7 +240,18 @@ void Compiler::classDeclaration() {
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
   emitByte(OP_POP);
 
+  if (classEnvironment.hasSuperclass) {
+    endScope();
+  }
+
   currentClassEnvironment = currentClassEnvironment->enclosing;
+}
+
+Token Compiler::syntheticToken(const std::string &text) {
+  Token token;
+  token.lexeme = text;
+  token.length = text.length();
+  return token;
 }
 
 void Compiler::method() {
@@ -547,7 +582,7 @@ void Compiler::invokePrefixRule(bool canAssign) {
     case TOKEN_OR: break;
     case TOKEN_PRINT: break;
     case TOKEN_RETURN: break;
-    case TOKEN_SUPER: break;
+    case TOKEN_SUPER: super_(); break;
     case TOKEN_THIS: this_(); break;
     case TOKEN_TRUE: literal(); break;
     case TOKEN_VAR: break;
@@ -648,6 +683,29 @@ void Compiler::this_() {
     return;
   }
   variable(false);
+}
+
+void Compiler::super_() {
+  if (currentClassEnvironment == NULL) {
+    error("Cannot use 'super' outside of a class.");
+  } else if (!(currentClassEnvironment->hasSuperclass)) {
+    error("Cannot use 'super' in a class with no superclass.");
+  }
+
+  consume(TOKEN_DOT, "Expect '.' after 'super'.");
+  consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
+  uint8_t name = identifierConstant(&previous);
+
+  namedVariable(syntheticToken("this"), false);
+  if (match(TOKEN_LEFT_PAREN)) {
+    uint8_t argCount = argumentList();
+    namedVariable(syntheticToken("super"), false);
+    emitBytes(OP_SUPER_INVOKE, name);
+    emitByte(argCount);
+  } else {
+    namedVariable(syntheticToken("super"), false);
+    emitBytes(OP_GET_SUPER, name);
+  }
 }
 
 void Compiler::call() {
@@ -872,11 +930,6 @@ void Compiler::declareVariable() {
 }
 
 bool Compiler::identifiersEqual(Token* a, Token* b) {
-  std::cout << "\nDebugging: \na lexeme: " << a->lexeme;
-  std::cout << "\na length: " << a->length;
-  std::cout << "\nb lexeme: " << b->lexeme;
-  std::cout << "\nb length: " << b->length << "\n\n";
-
   if (a->length != b->length) return false;
   return a->lexeme.compare(b->lexeme) == 0;
 }
