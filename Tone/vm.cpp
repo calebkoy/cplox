@@ -7,7 +7,7 @@
 #include "instanceobject.h"
 #include "boundmethodobject.h"
 
-#define DEBUG_TRACE_EXECUTION
+//#define DEBUG_TRACE_EXECUTION
 
 #define AS_FUNCTION(object)  ((FunctionObject*)(object)) // Q: is there a better way of doing this than a macro?
 #define AS_CLOSURE(object)  ((ClosureObject*)(object)) // Q: ditto
@@ -59,6 +59,14 @@ InterpretResult VM::run() {
       case OP_POP: stack.pop(); break;
       case OP_GET_LOCAL: {
         uint8_t slot = readByte(frame);
+        //std::cout << "Debugging: \n" << frame->slots[slot] << '\n';
+        std::cout << "Debugging:\n";
+        std::cout << "frame->slots[-2]: " << frame->slots[-2] << '\n';
+        std::cout << "frame->slots[-1]: " << frame->slots[-1] << '\n';
+        for (int i = 0; i < 4; i++) {
+          std::cout << "frame->slots[" << i << "]: " << frame->slots[i] << '\n';
+        }
+        std::cout << '\n';
         stack.push(frame->slots[slot]);
         //stack.push(stack.at(slot));
         break;
@@ -73,7 +81,6 @@ InterpretResult VM::run() {
 
       case OP_GET_GLOBAL: {
         StringObject* name = readString(frame);
-        std::cout << "\nDebugging: \nName of global var to get is: " << name->getChars() << "\n\n";
         Value value;
         std::unordered_map<std::string, Value>::iterator it = globals.find(name->getChars());
         if (it == globals.end()) {

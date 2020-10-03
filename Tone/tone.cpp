@@ -148,7 +148,7 @@ InterpretResult Tone::interpret(const std::string& source, Object *&objects,
   vm.getStack()->pop();
   vm.getStack()->push(Value{ closure });
 
-  CallFrame frame = { closure, 0, vm.getStack()->getTop() };
+  CallFrame frame = { closure, 0, vm.getStack()->getTop() - 1 };
   vm.getCallFrames()[vm.getCallFrameCount()] = frame;
   vm.incrementCallFrameCount();
 

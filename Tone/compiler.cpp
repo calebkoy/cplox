@@ -4,9 +4,9 @@
 
 #include "compiler.h"
 
-#define DEBUG_PRINT_CODE
+//#define DEBUG_PRINT_CODE
 
-// #define DEBUG_ENV_CODE
+//#define DEBUG_ENV_CODE
 
 // Q: should there be a default constructor that sets pointer members to nullptr?
 
