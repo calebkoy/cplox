@@ -1,0 +1,7 @@
+{} // Solo block
+
+// Statement blocks
+if (true) {}
+if (false) {} else {}
+
+print "all good"; // expect: all good
