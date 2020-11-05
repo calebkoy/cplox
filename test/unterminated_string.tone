@@ -1,1 +1,3 @@
 "unterminated string
+
+// Expect: Error at line 3: Unterminated string
