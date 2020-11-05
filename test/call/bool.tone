@@ -1,0 +1,1 @@
+false(); // expect: Can only call functions and classes.
