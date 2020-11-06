@@ -1128,7 +1128,7 @@ void Compiler::errorAt(Token token, const std::string &message) {
   } else if (token.type == TOKEN_ERROR) {
     // Nothing. Sure?
   } else {
-    std::cerr << " at " << token.lexeme;
+    std::cerr << " at " << "'" << token.lexeme << "'";
   }
 
   std::cerr << ": " << message << '\n';
