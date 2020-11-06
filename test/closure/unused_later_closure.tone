@@ -1,0 +1,22 @@
+var closure;
+
+{
+  var a = "a";
+
+  {
+    var b = "b";
+    function returnA() {
+      return a;
+    }
+
+    closure = returnA;
+
+    if (false) {
+      function returnB() {
+        return b;
+      }
+    }
+  }
+
+  print closure(); // expect: a
+}
