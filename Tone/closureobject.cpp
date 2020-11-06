@@ -7,10 +7,10 @@ ClosureObject::ClosureObject(FunctionObject* function) : Object{ OBJECT_CLOSURE 
 }
 
 void ClosureObject::setUpvalue(int index, UpvalueObject* upvalue) {
-  if ((int)upvalues.size() == 0) {
-    upvalues.push_back(upvalue);
-  } else if (index >= (int)upvalues.size()) { // Q: is the cast ok?
+  if (index < 0) {
     return; // Q: ok for now. What's the best thing to do long-term?
+  } else if (index >= (int)upvalues.size()) { // Q: is the cast ok?
+    upvalues.push_back(upvalue);
   } else {
     upvalues.at(index) = upvalue;
   }
