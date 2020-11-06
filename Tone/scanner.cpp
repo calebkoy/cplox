@@ -16,7 +16,7 @@ std::vector<Token> Scanner::scanTokens() {
 }
 
 bool Scanner::isAtEnd() {
-  return (current >= 0 && (size_t)current >= source.length());
+  return source.c_str()[current] == '\0';
 }
 
 void Scanner::scanToken() {
