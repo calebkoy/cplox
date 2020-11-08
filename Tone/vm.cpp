@@ -59,16 +59,7 @@ InterpretResult VM::run() {
       case OP_POP: stack.pop(); break;
       case OP_GET_LOCAL: {
         uint8_t slot = readByte(frame);
-        //std::cout << "Debugging: \n" << frame->slots[slot] << '\n';
-        std::cout << "Debugging:\n";
-        std::cout << "frame->slots[-2]: " << frame->slots[-2] << '\n';
-        std::cout << "frame->slots[-1]: " << frame->slots[-1] << '\n';
-        for (int i = 0; i < 4; i++) {
-          std::cout << "frame->slots[" << i << "]: " << frame->slots[i] << '\n';
-        }
-        std::cout << '\n';
         stack.push(frame->slots[slot]);
-        //stack.push(stack.at(slot));
         break;
       }
 
@@ -86,9 +77,8 @@ InterpretResult VM::run() {
         if (it == globals.end()) {
           runtimeError("Undefined variable '%s'.", name->getChars().c_str());
           return INTERPRET_RUNTIME_ERROR;
-        } else {
-          value = it->second;
         }
+        value = it->second;
         stack.push(value);
         break;
       }
@@ -157,10 +147,7 @@ InterpretResult VM::run() {
         }
 
         InstanceObject* instance = AS_INSTANCE(stack.peek(1).asObject());
-
-        // Q: does this correctly handle the case where the field already exists?
         instance->setField(readString(frame)->getChars(), stack.peek(0));
-
         Value value = stack.pop();
         stack.pop();
         stack.push(value);
@@ -207,13 +194,13 @@ InterpretResult VM::run() {
         } else if (stack.peek(0).isNumber() && stack.peek(1).isNumber()) {
           add();
         } else {
-          runtimeError("Operands must be numbers.");
+          runtimeError("Operands must be two numbers or two strings.");
           return INTERPRET_RUNTIME_ERROR;
         }
         break;
       case OP_SUBTRACT:
         if (!stack.peek(0).isNumber() || !stack.peek(1).isNumber()) {
-          runtimeError("Operands must be numbers.");
+          runtimeError("Operands must be two numbers or two strings.");
           return INTERPRET_RUNTIME_ERROR;
         }
         subtract();
@@ -472,7 +459,7 @@ bool VM::bindMethod(ClassObject* klass, StringObject* name) {
   Value method;
 
   if (!klass->findMethod(name->getChars())) {
-    runtimeError("Undefined property '%s'.", name->getChars());
+    runtimeError("Undefined property '%s'.", name->getChars().c_str());
     return false;
   }
 
@@ -515,7 +502,7 @@ bool VM::invokeFromClass(ClassObject* klass, StringObject* name, int argCount) {
   if (klass->findMethod(name->getChars())) {
     method = klass->getMethod(name->getChars());
   } else {
-    runtimeError("Undefined property '%s'.", name->getChars());
+    runtimeError("Undefined property '%s'.", name->getChars().c_str());
     return false;
   }
 
@@ -527,13 +514,10 @@ bool VM::valuesEqual(Value a, Value b) {
 
   switch (a.getType()) {
     case VAL_BOOL:   return a.asBool() == b.asBool();
-    case VAL_NULL:    return true;
+    case VAL_NULL:   return true;
     case VAL_NUMBER: return a.asNumber() == b.asNumber();
     case VAL_OBJECT: {
-      StringObject* aString = a.asString();
-      StringObject* bString = b.asString();
-
-      return (*aString).getChars().compare((*bString).getChars()) == 0;
+      return a.asObject() == b.asObject();
     }
     default:
       return false;
