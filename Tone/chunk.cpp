@@ -103,7 +103,7 @@ int Chunk::disassembleInstruction(int offset) {
       offset++;
       uint8_t constant = bytecode.at(offset++);
       printf("%-16s %4d ", "OP_CLOSURE", constant);
-      std::cout << constants.at(constant) << '\n';
+      std::cout << "<fn " << constants.at(constant) << ">\n";
 
       FunctionObject* function = AS_FUNCTION(constants.at(constant).asObject());
       for (int j = 0; j < function->getUpvalueCount(); j++) {
@@ -158,7 +158,7 @@ int Chunk::disassembleInvokeInstruction(const std::string& name, int offset) {
   uint8_t constant = bytecode.at(offset + 1);
   uint8_t argCount = bytecode.at(offset + 2);
   printf("%-16s (%d args) %4d '", name.c_str(), argCount, constant);
-  std::cout << constants.at(constant) << "\n";
+  std::cout << constants.at(constant) << "'\n";
   return offset + 3;
 }
 
