@@ -200,7 +200,7 @@ InterpretResult VM::run() {
         break;
       case OP_SUBTRACT:
         if (!stack.peek(0).isNumber() || !stack.peek(1).isNumber()) {
-          runtimeError("Operands must be two numbers or two strings.");
+          runtimeError("Operands must be numbers.");
           return INTERPRET_RUNTIME_ERROR;
         }
         subtract();
