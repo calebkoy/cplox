@@ -38,10 +38,6 @@ void Tone::runFile(const char *path) {
 
   file.seekg(0, std::ios::end);
   size_t size = file.tellg();
-
-  std::cout << "Debugging (TODO: remove):\n";
-  std::cout << size << '\n';
-
   std::string source(size, ' ');
   file.seekg(0);
   std::size_t  read = 0;
@@ -51,8 +47,8 @@ void Tone::runFile(const char *path) {
     std::size_t amount = file.gcount();
     if (amount == 0)
     {
-      std::cerr << "Encountered an error when reading the file at path: " << path << ".\n";
-      exit(74)
+      std::cerr << "Encountered an error when reading the file at path: " << path << '\n';
+      exit(74);
     }
     read += amount;
   } while(size != read);
@@ -126,9 +122,6 @@ std::ostream& operator<<(std::ostream& out, TokenType type) {
 
 InterpretResult Tone::interpret(const std::string& source, Object *&objects,
                                 std::unordered_map<std::string, Value> *strings) {
-  std::cout << "Debugging (TODO: remove):\n";
-  std::cout << source << '\n';
-
   Scanner scanner{ source };
   std::vector<Token> tokens = scanner.scanTokens();
 
@@ -156,7 +149,7 @@ InterpretResult Tone::interpret(const std::string& source, Object *&objects,
   //vm.resetProgramCounter(); // Q: do I need an equivalent version to reset the function program counters?
 
   // Q: would it be more OOP if VM did the operations below?
-  vm.getStack()->push(Value{ function });
+  vm.getStack()->push(Value{ function }); // Related to garbage collection. Q: is it necessary?
 
   ClosureObject* closure = new ClosureObject{ function }; // Q: how to avoid memory leaks?
 
