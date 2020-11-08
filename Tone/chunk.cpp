@@ -16,19 +16,23 @@ void Chunk::appendByte(uint8_t byte, int line) {
   lines.push_back(lineStart);
 }
 
-void Chunk::disassemble() {
+// TODO: consider adding a name property to a chunk so it doesn't have
+// to be passed in to this method
+void Chunk::disassemble(const std::string &name) {
+  std::cout << "== " << name << " ==\n";
+
   for (int offset = 0; offset < (int)bytecode.size();) {
     offset = disassembleInstruction(offset);
   }
 }
 
 int Chunk::disassembleInstruction(int offset) {
-  std::cout << offset << " ";
+  printf("%04d ", offset);
   int line = getLine(offset);
   if (offset > 0 && line == getLine(offset-1)) {
-    std::cout << "  | ";
+    std::cout << "   | ";
   } else {
-    std::cout << line << " ";
+    printf("%4d ", line);
   }
 
   uint8_t instruction = bytecode.at(offset);
@@ -98,14 +102,15 @@ int Chunk::disassembleInstruction(int offset) {
     case OP_CLOSURE: {
       offset++;
       uint8_t constant = bytecode.at(offset++);
-      std::cout << "OP_CLOSURE " << +constant << " " << constants.at(constant) << '\n';
+      printf("%-16s %4d ", "OP_CLOSURE", constant);
+      std::cout << constants.at(constant) << '\n';
 
       FunctionObject* function = AS_FUNCTION(constants.at(constant).asObject());
       for (int j = 0; j < function->getUpvalueCount(); j++) {
         int isLocal = bytecode.at(offset++);
         int index = bytecode.at(offset++);
-
-        std::cout << offset - 2 << "      |                     " << (isLocal ? "local " : "upvalue ") << index << '\n';
+        printf("%04d      |                     %s %d\n",
+                       offset - 2, isLocal ? "local" : "upvalue", index);
       }
 
       return offset;
@@ -138,28 +143,29 @@ int Chunk::addConstant(Value value) {
 
 int Chunk::disassembleConstantInstruction(const std::string& name, int offset) {
   uint8_t constant = bytecode.at(offset + 1);
-  std::cout << name << " " << +constant << " '" << constants.at(constant) << "'\n";
+  printf("%-16s %4d '", name.c_str(), constant);
+  std::cout << constants.at(constant) << "'\n";
   return offset + 2;
 }
 
 int Chunk::disassembleByteInstruction(const std::string& name, int offset) {
   uint8_t slot = bytecode.at(offset + 1);
-  std::cout << name << " " << +slot << '\n';
+  printf("%-16s %4d\n", name.c_str(), slot);
   return offset + 2;
 }
 
 int Chunk::disassembleInvokeInstruction(const std::string& name, int offset) {
   uint8_t constant = bytecode.at(offset + 1);
   uint8_t argCount = bytecode.at(offset + 2);
-  std::cout << name << " (" << argCount << " args) " << " " << +constant << " '";
-  std::cout << constants.at(constant) << '\n';
+  printf("%-16s (%d args) %4d '", name.c_str(), argCount, constant);
+  std::cout << constants.at(constant) << "\n";
   return offset + 3;
 }
 
 int Chunk::disassembleJumpInstruction(const std::string& name, int sign, int offset) {
   uint16_t jump = (uint16_t)(bytecode.at(offset + 1) << 8);
   jump |= bytecode.at(offset + 2);
-  std::cout << name << " " << offset << " -> " << (offset + 3 + (sign * jump)) << '\n';
+  printf("%-16s %4d -> %d\n", name.c_str(), offset, offset + 3 + (sign * jump));
   return offset + 3;
 }
 

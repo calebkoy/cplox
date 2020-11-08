@@ -65,7 +65,7 @@ class Chunk {
 
 public:
   void appendByte(uint8_t byte, int line);
-  void disassemble();
+  void disassemble(const std::string &name);
   int disassembleInstruction(int offset);
   int addConstant(Value value);
   int getLine(int offset);
