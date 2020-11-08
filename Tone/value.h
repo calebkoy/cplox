@@ -94,7 +94,7 @@ public:
         } else if (value.isClass()) {
           out << value.getClassName();
         } else if (value.isBoundMethod()) {
-          out << value.getBoundMethodName();
+          out << "<fn " << value.getBoundMethodName() << ">";
         } else {
           // Q: related to the above question:
           // What, if anything, should be done here?
