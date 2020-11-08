@@ -90,7 +90,6 @@ void Compiler::function(FunctionType type) {
     std::cout << '\n';
   }
 #endif // DEBUG_ENV_CODE
-
   Environment* environment = new Environment{ type, currentEnvironment }; // Q: how to ensure memory isn't leaked?
   currentEnvironment = environment;
 
@@ -210,6 +209,7 @@ void Compiler::classDeclaration() {
   currentClassEnvironment = &classEnvironment;
 
   if (match(TOKEN_LESS)) {
+    // Emit instructions to load the superclass variable's value.
     consume(TOKEN_IDENTIFIER, "Expect superclass name.");
     variable(false);
 
@@ -227,12 +227,17 @@ void Compiler::classDeclaration() {
 
     defineVariable(0);
 
+    // Load the subclass doing the inheriting onto the stack.
     namedVariable(className, false);
     emitByte(OP_INHERIT);
+
     classEnvironment.hasSuperclass = true;
   }
 
+  // Load the class onto the stack before compiling
+  // its body, so that its methods can be bound to it.
   namedVariable(className, false);
+
   consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
   while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
     method();
@@ -549,47 +554,57 @@ void Compiler::invokePrefixRule(bool canAssign) {
   // Q: should I be throwing errors instead of breaking if
   // switch matches an 'unexpected' token (but not via the default case)?
   switch (previous.type) {
+    case TOKEN_MINUS:
+    case TOKEN_BANG:
+      unary(); break;
+
+    case TOKEN_TRUE:
+    case TOKEN_FALSE:
+    case TOKEN_NULL:
+      literal(); break;
+
+    case TOKEN_SUPER: super_(); break;
+    case TOKEN_THIS: this_(); break;
     case TOKEN_LEFT_PAREN: grouping(); break;
-    case TOKEN_RIGHT_PAREN: break;
-    case TOKEN_LEFT_BRACE: break;
-    case TOKEN_RIGHT_BRACE: break;
-    case TOKEN_COMMA: break;
-    case TOKEN_DOT: break;
-    case TOKEN_MINUS: unary(); break;
-    case TOKEN_PLUS: break;
-    case TOKEN_SEMICOLON: break;
-    case TOKEN_SLASH: break;
-    case TOKEN_STAR: break;
-    case TOKEN_BANG: unary(); break;
-    case TOKEN_BANG_EQUAL: break;
-    case TOKEN_EQUAL: break;
-    case TOKEN_EQUAL_EQUAL: break;
-    case TOKEN_GREATER: break;
-    case TOKEN_GREATER_EQUAL: break;
-    case TOKEN_LESS: break;
-    case TOKEN_LESS_EQUAL: break;
     case TOKEN_IDENTIFIER: variable(canAssign); break;
     case TOKEN_STRING: string(); break;
     case TOKEN_NUMBER: number(); break;
-    case TOKEN_AND: break;
-    case TOKEN_CLASS: break;
-    case TOKEN_ELSE: break;
-    case TOKEN_FALSE: literal(); break;
-    case TOKEN_FOR: break;
-    case TOKEN_FUNCTION: break;
-    case TOKEN_IF: break;
-    case TOKEN_NULL: literal(); break;
-    case TOKEN_OR: break;
-    case TOKEN_PRINT: break;
-    case TOKEN_RETURN: break;
-    case TOKEN_SUPER: super_(); break;
-    case TOKEN_THIS: this_(); break;
-    case TOKEN_TRUE: literal(); break;
-    case TOKEN_VAR: break;
-    case TOKEN_WHILE: break;
-    case TOKEN_ERROR: break;
-    case TOKEN_EOF: break;
-    default: break;
+
+    case TOKEN_RIGHT_PAREN:
+    case TOKEN_LEFT_BRACE:
+    case TOKEN_RIGHT_BRACE:
+    case TOKEN_COMMA:
+    case TOKEN_DOT:
+    case TOKEN_PLUS:
+    case TOKEN_SEMICOLON:
+    case TOKEN_SLASH:
+    case TOKEN_STAR:
+    case TOKEN_BANG_EQUAL:
+    case TOKEN_EQUAL:
+    case TOKEN_EQUAL_EQUAL:
+    case TOKEN_GREATER:
+    case TOKEN_GREATER_EQUAL:
+    case TOKEN_LESS:
+    case TOKEN_LESS_EQUAL:
+    case TOKEN_AND:
+    case TOKEN_CLASS:
+    case TOKEN_ELSE:
+    case TOKEN_FOR:
+    case TOKEN_FUNCTION:
+    case TOKEN_IF:
+    case TOKEN_OR:
+    case TOKEN_PRINT:
+    case TOKEN_RETURN:
+    case TOKEN_VAR:
+    case TOKEN_WHILE:
+    case TOKEN_ERROR:
+    case TOKEN_EOF:
+      error("Expect expression");
+      break;
+
+    default:
+      error("Unexpected token type. No corresponding prefix rule.");
+      break;
   }
 }
 
@@ -615,7 +630,6 @@ void Compiler::invokeInfixRule(bool canAssign) {
     case TOKEN_DOT: dot(canAssign); break;
 
     case TOKEN_LEFT_PAREN: call(); break;
-
 
     case TOKEN_RIGHT_PAREN:
     case TOKEN_LEFT_BRACE:
@@ -643,7 +657,10 @@ void Compiler::invokeInfixRule(bool canAssign) {
     case TOKEN_WHILE:
     case TOKEN_ERROR:
     case TOKEN_EOF:
+      break;
+
     default:
+      error("Unexpected token type. No corresponding infix rule.");
       break;
   }
 }
@@ -1053,7 +1070,7 @@ FunctionObject* Compiler::endCompiler() {
 #endif // DEBUG_ENV_CODE
 
 #ifdef DEBUG_PRINT_CODE
-  if (!hadError) currentChunk()->disassemble();
+  if (!hadError) currentChunk()->disassemble(function->getName() != NULL ? function->getName()->getChars() : "<script>");
 #endif // DEBUG_PRINT_CODE
 
 #ifdef DEBUG_ENV_CODE
