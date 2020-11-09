@@ -5,6 +5,7 @@
 #include "compiler.h"
 #include "scanner.h"
 #include "tone.h"
+#include "vm.h"
 
 void Tone::repl() {
   std::string line;
@@ -63,11 +64,13 @@ void Tone::runFile(const char *path) {
 
   // Todo: refactor use of strings in both repl and runFile
 
-  interpret(source, objects, &strings);
-
-  // Todo: If there's been a compilation or runtime error, exit w/ appropriate exit code
+  InterpretResult result = interpret(source, objects, &strings);
 
   vm.freeObjects();
+
+  // Todo: If there's been a compilation or runtime error, exit w/ appropriate exit code
+  if (result == INTERPRET_COMPILATION_ERROR) exit(65);
+  if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
 
 std::ostream& operator<<(std::ostream& out, TokenType type) {
