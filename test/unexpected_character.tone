@@ -1,0 +1,3 @@
+// Error at line 3: Unexpected character.
+// [line 3] Error at 'b': Expect ')' after arguments.
+foo(a | b);
