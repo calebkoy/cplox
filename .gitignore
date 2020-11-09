@@ -1,14 +1,11 @@
+grammar.txt
+
+# Build-related files
 **/*.o
+
+# IDE-related files
 Tone/Tone.cbp
-**/*.exe
+Tone/Tone.cscope_file_list
 Tone/Tone.depend
 Tone/Tone.layout
-grammar.txt
-test.tone
-Tone/Tone.cscope_file_list
-functionTest.tone
-functionTest2.tone
-preImplementationClosureTest.tone
-postImplementationClosureTest.tone
-sconeTest.tone
-coffeeMakerTest.tone
+Tone/bin/Debug/*
