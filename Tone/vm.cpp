@@ -84,7 +84,7 @@ InterpretResult VM::run() {
       }
       case OP_DEFINE_GLOBAL: {
         StringObject* name = readString(frame);
-        globals.insert(std::make_pair(name->getChars(), stack.peek(0)));
+        globals[name->getChars()] = stack.peek(0);
         stack.pop();
         break;
       }
