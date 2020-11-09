@@ -22,7 +22,6 @@ void ClassObject::setMethod(const std::string &name, Value method) {
   // Q: error handling? Overriding?
 
   methods[name] = method;
-  //methods.insert(std::make_pair(name, method)); // TODO: remove if above works
 }
 
 StringObject* ClassObject::getName() {

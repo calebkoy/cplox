@@ -22,7 +22,6 @@ void InstanceObject::setField(const std::string &name, Value value) {
   // Q: Error handling?
 
   fields[name] = value;
-  //fields.insert(std::make_pair(name, value));
 }
 
 ClassObject* InstanceObject::getKlass() {
