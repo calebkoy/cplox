@@ -5,8 +5,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "error_reporter.h"
-
 enum TokenType {
   // Single-character tokens
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN,
@@ -65,7 +63,6 @@ class Scanner {
   int start{ 0 };
   int current{ 0 };
   int line{ 1 };
-  ErrorReporter reporter;
   std::unordered_map<std::string, TokenType> reservedWords = {
     {"true", TOKEN_TRUE},
     {"false", TOKEN_FALSE},

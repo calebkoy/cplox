@@ -72,7 +72,8 @@ void Scanner::scanToken() {
       line++;
       break;
     default:
-      reporter.report(line, "Unexpected character.");
+      std::string message = "Unexpected character.";
+      addToken(TOKEN_ERROR, message, start, 0);
   }
 }
 
@@ -146,7 +147,8 @@ void Scanner::scanString() {
   }
 
   if (isAtEnd()) {
-    reporter.report(line, "Unterminated string");
+    std::string message = "Unterminated string.";
+    addToken(TOKEN_ERROR, message, start, 0);
     return;
   }
 
