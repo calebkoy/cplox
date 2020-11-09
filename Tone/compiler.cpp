@@ -921,7 +921,7 @@ void Compiler::declareVariable() {
     }
 
     if (identifiersEqual(name, &local->name)) {
-      error("Variable with this name already declared in this scope.");
+      error("Already variable with this name in this scope.");
     }
   }
 
