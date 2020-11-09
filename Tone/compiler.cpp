@@ -6,8 +6,6 @@
 
 //#define DEBUG_PRINT_CODE
 
-//#define DEBUG_ENV_CODE
-
 // Q: should there be a default constructor that sets pointer members to nullptr?
 
 // Q: should I be using smart pointers and/or move semantics here
@@ -599,7 +597,7 @@ void Compiler::invokePrefixRule(bool canAssign) {
     case TOKEN_WHILE:
     case TOKEN_ERROR:
     case TOKEN_EOF:
-      error("Expect expression");
+      error("Expect expression.");
       break;
 
     default:
@@ -893,7 +891,7 @@ void Compiler::emitConstant(Value value) {
 
 uint8_t Compiler::makeConstant(Value value) {
   int constant = currentChunk()->addConstant(value);
-  if (constant > UINT8_MAX) {
+  if ((unsigned)constant > UINT8_MAX) {
     error("Too many constants in one chunk.");
     return 0; // Q: could this be problematic?
   }
