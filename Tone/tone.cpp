@@ -38,6 +38,7 @@ void Tone::runFile(const char *path) {
 
   file.seekg(0, std::ios::end);
   size_t size = file.tellg();
+  if ((int)size == 0) return;
   std::string source(size, ' ');
   file.seekg(0);
   std::size_t  read = 0;
