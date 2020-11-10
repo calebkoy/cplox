@@ -71,7 +71,7 @@ class Scanner {
     {"class", TOKEN_CLASS},
     {"var", TOKEN_VAR},
     {"extends", TOKEN_EXTENDS},
-    {"print", TOKEN_PRINT}, // Get rid of this when print is in standard library
+    {"print", TOKEN_PRINT},
     {"for", TOKEN_FOR},
     {"while", TOKEN_WHILE},
     {"if", TOKEN_IF},
@@ -83,12 +83,6 @@ class Scanner {
     {"super", TOKEN_SUPER}
   };
 
-public:
-  Scanner(const std::string source);
-
-  std::vector<Token> scanTokens();
-
-private:
   bool isAtEnd();
   void scanToken();
   char advance();
@@ -101,6 +95,12 @@ private:
   void scanString();
   void scanNumber();
   void scanAlpha();
+
+public:
+  std::vector<Token> scanTokens();
+  void reset();
+
+  void setSource(const std::string &source);
 };
 
 #endif // SCANNER_H

@@ -1,9 +1,5 @@
 #include "scanner.h"
 
-Scanner::Scanner(const std::string source) {
-  this->source = source;
-}
-
 std::vector<Token> Scanner::scanTokens() {
   while (!isAtEnd()) {
     start = current;
@@ -156,4 +152,16 @@ void Scanner::scanString() {
   int length = current - start - 2;
   std::string lexeme = source.substr(start+1, length);
   addToken(TOKEN_STRING, lexeme, start+1, length);
+}
+
+void Scanner::reset() {
+  tokens.clear();
+  start = 0;
+  current = 0;
+  line = 1;
+  source = "";
+}
+
+void Scanner::setSource(const std::string &source) {
+  this->source = source;
 }

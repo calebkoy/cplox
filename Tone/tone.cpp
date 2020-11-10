@@ -50,10 +50,12 @@ void Tone::runFile(const char *path) {
   if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
 
-InterpretResult Tone::interpret(const std::string& source) {
+InterpretResult Tone::interpret(const std::string &source) {
   // TODO: instead of creating a scanner each time,
   // it might be better to give Tone a scanner
-  Scanner scanner{ source };
+  //Scanner scanner{ source };
+  scanner.reset();
+  scanner.setSource(source);
   std::vector<Token> tokens = scanner.scanTokens();
 
   // Q: does 'string interning' provide any value to Tone?

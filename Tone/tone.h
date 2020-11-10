@@ -9,8 +9,9 @@
 
 class Tone {
 private:
+  Scanner scanner;
   VM vm;
-  InterpretResult interpret(const std::string& source);
+  InterpretResult interpret(const std::string &source);
 
 public:
   void repl();
