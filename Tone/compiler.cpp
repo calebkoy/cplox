@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <limits>
-#include <memory>
 
 //#define DEBUG_PRINT_CODE
 
@@ -16,7 +15,6 @@ Compiler::Compiler(const std::vector<Token> &tokens,
   tokens{ tokens }, strings{ strings } {
 
   currentEnvironment = new Environment(TYPE_SCRIPT, nullptr); // Q: how can I prevent memory leaks?
-  currentClassEnvironment = nullptr;
 }
 
 FunctionObject* Compiler::compile() {
@@ -33,7 +31,7 @@ void Compiler::advance() {
   previous = current;
 
   for (;;) {
-    current = tokens.at(currentTokenIndex++);
+    current = tokens.at(currentTokenIndex++); // TODO: check if operator[] is faster than at()
     if (current.type != TOKEN_ERROR) break;
 
     errorAtCurrent(current.lexeme);
@@ -690,7 +688,7 @@ void Compiler::or_() {
 }
 
 void Compiler::this_() {
-  if (currentClassEnvironment == NULL) {
+  if (currentClassEnvironment == nullptr) {
     error("Cannot use 'this' outside of a class.");
     return;
   }
@@ -698,7 +696,7 @@ void Compiler::this_() {
 }
 
 void Compiler::super_() {
-  if (currentClassEnvironment == NULL) {
+  if (currentClassEnvironment == nullptr) {
     error("Cannot use 'super' outside of a class.");
   } else if (!(currentClassEnvironment->hasSuperclass)) {
     error("Cannot use 'super' in a class with no superclass.");
