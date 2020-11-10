@@ -8,6 +8,9 @@
 #include <unordered_map>
 #include <vector>
 
+// TODO: Make a note that you ideally should implement a copy constructor
+// since you have members that are pointers.
+
 // TODO: consider moving this into the Compiler class declaration
 enum Precedence {
   PRECEDENCE_NONE,
@@ -23,16 +26,6 @@ enum Precedence {
   PRECEDENCE_PRIMARY
 };
 
-// TODO: get rid of this if it's not being used.
-typedef void (*ParseFn)();
-
-// TODO: get rid of this if it's not being used.
-struct ParseRule {
-  ParseFn prefix;
-  ParseFn infix;
-  Precedence precedence;
-};
-
 // TODO: consider moving this into the Compiler class declaration
 struct ClassEnvironment {
   struct ClassEnvironment* enclosing;
@@ -43,7 +36,7 @@ struct ClassEnvironment {
 class Compiler {
   const std::vector<Token> tokens;
   Environment* currentEnvironment; // Q: should this be a pointer?
-  ClassEnvironment* currentClassEnvironment;
+  ClassEnvironment* currentClassEnvironment{ nullptr };
   std::unordered_map<std::string, Value> *strings; // Q: should this be a pointer?
   Token current;
   Token previous;
