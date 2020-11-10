@@ -859,7 +859,7 @@ StringObject* Compiler::copyString(Token* name) {
   std::unordered_map<std::string, Value>::iterator it = strings->find(name->lexeme);
   if (it == strings->end()) {
     StringObject* stringObject = new StringObject(name->lexeme);
-    (*stringObject).setNext(objects);
+    stringObject->setNext(objects);
     objects = stringObject;
     strings->insert(std::make_pair(name->lexeme, Value{ stringObject }));
 
