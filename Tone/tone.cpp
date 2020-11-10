@@ -122,7 +122,7 @@ InterpretResult Tone::interpret(const std::string& source) {
   // Q: better way to pass objects pointer?
   // Q: better way to pass unordered map?
   //Compiler compiler{ tokens, &chunk, objects, strings };
-  Compiler compiler{ tokens, strings };
+  Compiler compiler{ tokens, &strings };
   FunctionObject* function = compiler.compile();
   if (function == NULL) return INTERPRET_COMPILATION_ERROR;
 //  if (!compiler.compile()) {
