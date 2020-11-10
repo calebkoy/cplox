@@ -1,7 +1,7 @@
-#include <iostream>
-
 #include "chunk.h"
 #include "functionobject.h"
+
+#include <iostream>
 
 // Q: is there a better way of doing this than a macro?
 // Also note that this is duplicated in vm.cpp

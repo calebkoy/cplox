@@ -1,9 +1,9 @@
 #ifndef STACK_H
 #define STACK_H
 
-#include <array>
-
 #include "value.h"
+
+#include <array>
 
 class Stack {
   static const int max{ 64 * 256 }; // Todo: clean this up by removing hardcoded values

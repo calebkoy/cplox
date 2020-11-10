@@ -1,11 +1,11 @@
 #ifndef TONE_H
 #define TONE_H
 
-#include <string>
-#include <vector>
-
 #include "scanner.h"
 #include "vm.h"
+
+#include <string>
+#include <vector>
 
 class Tone {
 private:

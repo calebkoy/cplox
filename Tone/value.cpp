@@ -1,10 +1,10 @@
-#include <iostream>
-
 #include "closureobject.h"
 #include "functionobject.h"
 #include "instanceobject.h"
 #include "value.h"
 #include "boundmethodobject.h"
+
+#include <iostream>
 
 // Q: does it matter that this logic was somewhat arbitrarily chosen?
 Value::Value() {

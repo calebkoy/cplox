@@ -1,6 +1,6 @@
-#include <iostream>
-
 #include "tone.h"
+
+#include <iostream>
 
 int main(int argc, char *argv[]) {
   Tone tone;

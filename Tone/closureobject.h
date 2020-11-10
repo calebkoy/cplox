@@ -1,11 +1,11 @@
 #ifndef CLOSURE_OBJECT_H
 #define CLOSURE_OBJECT_H
 
-#include <vector>
-
 #include "object.h"
 #include "functionobject.h"
 #include "upvalueobject.h"
+
+#include <vector>
 
 class ClosureObject : public Object {
   FunctionObject* function;

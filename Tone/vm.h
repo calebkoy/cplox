@@ -1,14 +1,14 @@
 #ifndef VM_H
 #define VM_H
 
-#include <unordered_map>
-
 #include "chunk.h"
 #include "stack.h"
 #include "value.h"
 #include "closureobject.h"
 #include "nativeobject.h"
 #include "classobject.h"
+
+#include <unordered_map>
 
 enum InterpretResult {
   INTERPRET_OK,
@@ -24,7 +24,7 @@ struct CallFrame {
 
 class VM {
   static const int callFramesMax = 64;
-  CallFrame callFrames[callFramesMax];
+  CallFrame callFrames[callFramesMax]; // Q: is there a better C++ way of implementing the callframes concept?
   int callFrameCount;
 
   Stack stack;
@@ -53,8 +53,6 @@ class VM {
   void greaterThan();
   void lessThan();
 
-  // Q: how can I write this so it's handled by ErrorReporter?
-  // Q: does this need to be variadic?
   void runtimeError(const char* format, ...);
 
   // todo: put this in the class that should own it (maybe in Value, by overriding
@@ -69,7 +67,6 @@ class VM {
   bool bindMethod(ClassObject* klass, StringObject* name);
   bool invoke(StringObject* name, int argCount);
   bool invokeFromClass(ClassObject* klass, StringObject* name, int argCount);
-  //void defineNative(const std::string &name, nativeFunctionPointer function); // Q: try to get this to work?
   StringObject* copyString(const std::string &name);
 
 public:
@@ -92,8 +89,6 @@ public:
   void freeObjects();
 
   void incrementCallFrameCount();
-
-  //Value clockNative(int argCount, Value* args); // Q: should this be here? Should it be public?
 
   Stack* getStack();
   CallFrame* getCallFrames();

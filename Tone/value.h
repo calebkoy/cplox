@@ -1,12 +1,12 @@
 #ifndef VALUE_H
 #define VALUE_H
 
+#include "object.h"
+#include "stringobject.h"
+
 #include <iostream>
 #include <memory>
 #include <variant>
-
-#include "object.h"
-#include "stringobject.h"
 
 typedef enum {
   VAL_BOOL,

@@ -1,11 +1,11 @@
-#include <iostream>
-#include <stdarg.h> // Q: is this needed (for runtimeError())?
-
 #include "vm.h"
 #include "nativeobject.h"
 #include "closureobject.h"
 #include "instanceobject.h"
 #include "boundmethodobject.h"
+
+#include <iostream>
+#include <stdarg.h> // Q: is this needed (for runtimeError())?
 
 //#define DEBUG_TRACE_EXECUTION
 
@@ -465,8 +465,6 @@ bool VM::bindMethod(ClassObject* klass, StringObject* name) {
 
   method = klass->getMethod(name->getChars());
 
-  // Todo: I think the error is here. I don't think method is actually being bound.
-
   // Q: avoid memory leaks?
   BoundMethodObject* bound = new BoundMethodObject(stack.peek(0), AS_CLOSURE(method.asObject()));
   stack.pop();
@@ -537,19 +535,9 @@ void VM::freeObjects() {
   }
 }
 
-// Todo: get rid of this when all code working
-//void VM::setChunk(Chunk chunk) {
-//  this->chunk = chunk;
-//}
-
 void VM::setObjects(Object* objects) {
   this->objects = objects;
 }
-
-// Todo: get rid of this when all code working
-//void VM::resetProgramCounter() {
-//  programCounter = 0;
-//}
 
 Stack* VM::getStack() {
   return &stack;
@@ -625,7 +613,7 @@ bool VM::call(ClosureObject* closure, int argCount) {
   frame->closure = closure;
   frame->functionProgramCounter = 0;
 
-  frame->slots = stack.getTop() - argCount - 1; // Q: does this work?
+  frame->slots = stack.getTop() - argCount - 1;
   return true;
 }
 

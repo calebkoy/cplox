@@ -1,11 +1,11 @@
 #ifndef INSTANCE_OBJECT_H
 #define INSTANCE_OBJECT_H
 
-#include <unordered_map>
-
 #include "object.h"
 #include "value.h"
 #include "classobject.h"
+
+#include <unordered_map>
 
 class InstanceObject : public Object {
   ClassObject* klass;

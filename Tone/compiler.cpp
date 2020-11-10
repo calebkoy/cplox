@@ -1,8 +1,8 @@
+#include "compiler.h"
+
 #include <iostream>
 #include <limits>
 #include <memory>
-
-#include "compiler.h"
 
 //#define DEBUG_PRINT_CODE
 
@@ -344,7 +344,7 @@ void Compiler::forStatement() {
 
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
   if (match(TOKEN_SEMICOLON)) {
-    // No initializer. // Q: is this necessary?
+    // No initializer.
   } else if (match(TOKEN_VAR)) {
     varDeclaration();
   } else {
@@ -549,8 +549,6 @@ void Compiler::parsePrecedence(Precedence precedence) {
 }
 
 void Compiler::invokePrefixRule(bool canAssign) {
-  // Q: should I be throwing errors instead of breaking if
-  // switch matches an 'unexpected' token (but not via the default case)?
   switch (previous.type) {
     case TOKEN_MINUS:
     case TOKEN_BANG:
@@ -606,7 +604,6 @@ void Compiler::invokePrefixRule(bool canAssign) {
   }
 }
 
-// Q: could this be refactored to use a map or other data structure that stores functions?
 void Compiler::invokeInfixRule(bool canAssign) {
   switch (previous.type) {
     case TOKEN_MINUS:

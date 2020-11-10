@@ -1,6 +1,6 @@
-#include <iostream>
-
 #include "stack.h"
+
+#include <iostream>
 
 Stack::Stack() : top{ arr.data() } {}
 

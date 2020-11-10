@@ -1,11 +1,11 @@
 #ifndef ENVIRONMENT_H
 #define ENVIRONMENT_H
 
-#include <array>
-#include <limits>
-
 #include "functionobject.h"
 #include "scanner.h"
+
+#include <array>
+#include <limits>
 
 struct Local {
   Token name;

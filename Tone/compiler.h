@@ -1,12 +1,12 @@
 #ifndef COMPILER_H
 #define COMPILER_H
 
-#include <unordered_map>
-#include <vector>
-
 #include "chunk.h"
 #include "environment.h"
 #include "scanner.h"
+
+#include <unordered_map>
+#include <vector>
 
 enum Precedence {
   PRECEDENCE_NONE,

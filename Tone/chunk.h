@@ -1,11 +1,11 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 
+#include "value.h"
+
 #include <map>
 #include <string>
 #include <vector>
-
-#include "value.h"
 
 enum OpCode {
   OP_CONSTANT,

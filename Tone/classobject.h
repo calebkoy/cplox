@@ -1,11 +1,11 @@
 #ifndef CLASS_OBJECT_H
 #define CLASS_OBJECT_H
 
-#include <unordered_map>
-
 #include "object.h"
 #include "stringobject.h"
 #include "value.h"
+
+#include <unordered_map>
 
 // Q: is it possible to print this using an asClass() method in the Value class again?
 

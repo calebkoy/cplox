@@ -1,9 +1,9 @@
 #ifndef STRING_OBJECT_H
 #define STRING_OBJECT_H
 
-#include <string>
-
 #include "object.h"
+
+#include <string>
 
 class StringObject : public Object {
   std::string chars; // Q: better name than chars?
