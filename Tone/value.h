@@ -24,7 +24,7 @@ class Value {
   union {
     bool boolean;
     double number;
-    //std::unique_ptr<Object> object;
+    //TODO: consider using: std::unique_ptr<Object> object;
     Object* object;
   } as;
 
@@ -33,9 +33,10 @@ class Value {
 public:
   Value();
   Value(bool boolean);
-  // Todo: learn how to explain how unique_ptr and move semantics work
-  // here and the benefits and potential drawbacks
-  Value(Object* object);
+
+  //Value(std::shared_ptr<Object> object);
+  Value(Object* object); // TODO: get rid of this if the program works with a smart pointer
+
   Value(ValueType type, double number);
 
   bool asBool() const;

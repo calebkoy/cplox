@@ -7,21 +7,29 @@
 #include <iostream>
 
 // Q: does it matter that this logic was somewhat arbitrarily chosen?
-Value::Value() {
-  type = VAL_NUMBER;
+// Q: is this ctor even necessary?
+Value::Value() : type{ VAL_NUMBER }
+{
   as.number = 0;
 }
 
-Value::Value(bool boolean) {
-  // Q: what to do if type != VAL_BOOL?
-  this->type = VAL_BOOL;
+Value::Value(bool boolean) : type{ VAL_BOOL }
+{
   as.boolean = boolean;
 }
 
-Value::Value(Object* object) {
+// TODO: note that if you're simply going to get the raw pointer from
+// the shared pointer, then you might as well just pass in the raw
+// pointer instead
+//Value::Value(std::shared_ptr<Object> object) : type{ VAL_OBJECT }
+//{
+//  as.object = object.get();
+//}
+
+Value::Value(Object* object) : type{ VAL_OBJECT }
+{
   // Q: what to do if type != VAL_OBJECT?
 
-  this->type = VAL_OBJECT;
   as.object = object; // Q: is pointer assignment correct here? Could we have leaks and/or other issues?
   //as.object = std::move(object);
 }
