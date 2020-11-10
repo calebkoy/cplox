@@ -24,8 +24,6 @@ void Tone::repl() {
     }
     interpret(line, &strings);
   }
-
-  vm.freeObjects();
 }
 
 void Tone::runFile(const char *path) {
@@ -62,8 +60,6 @@ void Tone::runFile(const char *path) {
   // Todo: refactor use of `strings` in both repl and runFile
 
   InterpretResult result = interpret(source, &strings);
-
-  vm.freeObjects();
 
   if (result == INTERPRET_COMPILATION_ERROR) exit(65);
   if (result == INTERPRET_RUNTIME_ERROR) exit(70);

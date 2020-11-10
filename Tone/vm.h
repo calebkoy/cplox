@@ -71,8 +71,6 @@ class VM {
 
 public:
   VM();
-  VM(Object* objects);
-
   InterpretResult interpret();
   InterpretResult run();
 
@@ -80,13 +78,8 @@ public:
   // Q: how should Chunk be passed?
   void setChunk(Chunk chunk);
 
-  void setObjects(Object* objects);
-
   // Todo: get rid of this when all the code is working.
   void resetProgramCounter();
-
-  // Q: who should own this method?
-  void freeObjects();
 
   void incrementCallFrameCount();
 

@@ -24,11 +24,6 @@ VM::VM() {
   //defineNative("clock", this->clockNative);
 }
 
-VM::VM(Object* objects) : callFrameCount{ 0 }, objects{ objects }, openUpvalues{ nullptr } {
-  initString = copyString("init");
-  //defineNative("clock", clockNative);
-}
-
 // Q: is this needed?
 InterpretResult VM::interpret() {
   return run();
@@ -520,23 +515,6 @@ bool VM::valuesEqual(Value a, Value b) {
     default:
       return false;
   }
-}
-
-// Q: do you ensure you free all types of objects that might still be lingering in memory
-// when the VM finishes running?
-void VM::freeObjects() {
-  Object* object = objects;
-
-  // Q: should this be nullptr or is NULL fine?
-  while (object != NULL) {
-    Object* next = object->getNext();
-    free(object);
-    object = next;
-  }
-}
-
-void VM::setObjects(Object* objects) {
-  this->objects = objects;
 }
 
 Stack* VM::getStack() {
