@@ -9,7 +9,6 @@
 
 void Tone::repl() {
   std::string line;
-  Object* objects = nullptr;
 
   // Q: does 'string interning' provide any value to Tone?
   // If not, remove the strings map.
@@ -23,7 +22,7 @@ void Tone::repl() {
       std::cout << '\n';
       break;
     }
-    interpret(line, objects, &strings);
+    interpret(line, &strings);
   }
 
   vm.freeObjects();
@@ -55,8 +54,6 @@ void Tone::runFile(const char *path) {
     read += amount;
   } while(size != read);
 
-  Object* objects = nullptr;
-
   // Q: does 'string interning' provide any value to Tone?
   // If not, remove the strings map.
   // Q: is it fine to leave this uninitialised?
@@ -64,7 +61,7 @@ void Tone::runFile(const char *path) {
 
   // Todo: refactor use of `strings` in both repl and runFile
 
-  InterpretResult result = interpret(source, objects, &strings);
+  InterpretResult result = interpret(source, &strings);
 
   vm.freeObjects();
 
@@ -123,7 +120,7 @@ std::ostream& operator<<(std::ostream& out, TokenType type) {
   return out << s;
 }
 
-InterpretResult Tone::interpret(const std::string& source, Object *&objects,
+InterpretResult Tone::interpret(const std::string& source,
                                 std::unordered_map<std::string, Value> *strings) {
   Scanner scanner{ source };
   std::vector<Token> tokens = scanner.scanTokens();
@@ -140,7 +137,7 @@ InterpretResult Tone::interpret(const std::string& source, Object *&objects,
   // Q: better way to pass objects pointer?
   // Q: better way to pass unordered map?
   //Compiler compiler{ tokens, &chunk, objects, strings };
-  Compiler compiler{ tokens, objects, strings };
+  Compiler compiler{ tokens, strings };
   FunctionObject* function = compiler.compile();
   if (function == NULL) return INTERPRET_COMPILATION_ERROR;
 //  if (!compiler.compile()) {
@@ -148,7 +145,6 @@ InterpretResult Tone::interpret(const std::string& source, Object *&objects,
 //  }
 
   //vm.setChunk(chunk);
-  vm.setObjects(objects);
   //vm.resetProgramCounter(); // Q: do I need an equivalent version to reset the function program counters?
 
   // Q: would it be more OOP if VM did the operations below?

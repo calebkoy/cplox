@@ -678,8 +678,6 @@ StringObject* VM::copyString(const std::string &name) {
   std::unordered_map<std::string, Value>::iterator it = strings.find(name);
   if (it == strings.end()) {
     StringObject* stringObject = new StringObject(name);
-    (*stringObject).setNext(objects);
-    objects = stringObject;
     strings.insert(std::make_pair(name, Value{ stringObject }));
 
     return stringObject;

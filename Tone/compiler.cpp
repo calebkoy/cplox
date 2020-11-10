@@ -12,8 +12,8 @@
 // to ensure that there are no memory leaks?
 // See https://stackoverflow.com/questions/7575459/c-should-i-initialize-pointer-members-that-are-assigned-to-in-the-constructor
 Compiler::Compiler(const std::vector<Token> tokens,
-                   Object *&objects, std::unordered_map<std::string, Value> *strings) :
-  tokens{ tokens }, objects{ objects }, strings{ strings } {
+                   std::unordered_map<std::string, Value> *strings) :
+  tokens{ tokens }, strings{ strings } {
 
   currentEnvironment = new Environment(TYPE_SCRIPT, nullptr); // Q: how can I prevent memory leaks?
   currentClassEnvironment = nullptr;
@@ -859,10 +859,7 @@ StringObject* Compiler::copyString(Token* name) {
   std::unordered_map<std::string, Value>::iterator it = strings->find(name->lexeme);
   if (it == strings->end()) {
     StringObject* stringObject = new StringObject(name->lexeme);
-    stringObject->setNext(objects);
-    objects = stringObject;
     strings->insert(std::make_pair(name->lexeme, Value{ stringObject }));
-
     return stringObject;
   }
 

@@ -40,7 +40,6 @@ class Compiler {
   const std::vector<Token> tokens;
   Environment* currentEnvironment; // Q: should this be a pointer?
   ClassEnvironment* currentClassEnvironment;
-  Object* objects;
   std::unordered_map<std::string, Value> *strings; // Q: should this be a pointer?
   Token current;
   Token previous;
@@ -160,7 +159,7 @@ public:
   // See: https://stackoverflow.com/questions/10240161/reason-to-pass-a-pointer-by-reference-in-c
   // Q: better way to pass strings? Is it fine that caller doesn't know that it's being passed by reference?
   Compiler(const std::vector<Token> tokens,
-           Object *&objects, std::unordered_map<std::string, Value> *strings);
+           std::unordered_map<std::string, Value> *strings);
 
   FunctionObject* compile();
 };

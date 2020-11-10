@@ -9,11 +9,8 @@
 
 class Tone {
 private:
-  // Q: should this be initialised when Tone is constructed?
-  // Perhaps VM should have an explicit default constructor.
   VM vm;
-
-  InterpretResult interpret(const std::string& source, Object *&objects,
+  InterpretResult interpret(const std::string& source,
                             std::unordered_map<std::string, Value> *strings);
 
 public:
