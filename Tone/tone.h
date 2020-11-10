@@ -10,8 +10,7 @@
 class Tone {
 private:
   VM vm;
-  InterpretResult interpret(const std::string& source,
-                            std::unordered_map<std::string, Value> *strings);
+  InterpretResult interpret(const std::string& source);
 
 public:
   void repl();

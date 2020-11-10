@@ -9,31 +9,23 @@
 
 void Tone::repl() {
   std::string line;
-
-  // Q: does 'string interning' provide any value to Tone?
-  // If not, remove the strings map.
-  std::unordered_map<std::string, Value> strings;
-
   for (;;) {
     std::cout << ">> ";
-
     std::getline(std::cin, line);
     if (line.empty()) {
       std::cout << '\n';
       break;
     }
-    interpret(line, &strings);
+    interpret(line);
   }
 }
 
 void Tone::runFile(const char *path) {
   std::ifstream file{ path, std::ios::binary };
-
   if (!file) {
     std::cerr << "Cannot open " << path << " for reading.\n";
     exit(66);
   }
-
   file.seekg(0, std::ios::end);
   size_t size = file.tellg();
   if ((int)size == 0) return;
@@ -52,14 +44,7 @@ void Tone::runFile(const char *path) {
     read += amount;
   } while(size != read);
 
-  // Q: does 'string interning' provide any value to Tone?
-  // If not, remove the strings map.
-  // Q: is it fine to leave this uninitialised?
-  std::unordered_map<std::string, Value> strings;
-
-  // Todo: refactor use of `strings` in both repl and runFile
-
-  InterpretResult result = interpret(source, &strings);
+  InterpretResult result = interpret(source);
 
   if (result == INTERPRET_COMPILATION_ERROR) exit(65);
   if (result == INTERPRET_RUNTIME_ERROR) exit(70);
@@ -116,8 +101,7 @@ std::ostream& operator<<(std::ostream& out, TokenType type) {
   return out << s;
 }
 
-InterpretResult Tone::interpret(const std::string& source,
-                                std::unordered_map<std::string, Value> *strings) {
+InterpretResult Tone::interpret(const std::string& source) {
   Scanner scanner{ source };
   std::vector<Token> tokens = scanner.scanTokens();
 
@@ -129,6 +113,11 @@ InterpretResult Tone::interpret(const std::string& source,
 //  }
 
   //Chunk chunk;
+
+  // Q: does 'string interning' provide any value to Tone?
+  // If not, remove the strings map.
+  // Q: is it fine to leave this uninitialised?
+  std::unordered_map<std::string, Value> strings;
 
   // Q: better way to pass objects pointer?
   // Q: better way to pass unordered map?
