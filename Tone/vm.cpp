@@ -17,11 +17,9 @@
 #define AS_BOUND_METHOD(object)        ((BoundMethodObject*)(object)) // Q: ditto
 
 VM::VM() {
-  objects = nullptr;
   openUpvalues = nullptr;
   callFrameCount = 0;
-  initString = copyString("init");
-  //defineNative("clock", this->clockNative);
+  initString = new StringObject("init"); // TODO: do this better so memory isn't leaked
 }
 
 // Q: is this needed?
@@ -640,30 +638,3 @@ int VM::getCallFrameCount() {
 void VM::incrementCallFrameCount() {
   callFrameCount++;
 }
-
-//void VM::defineNative(const std::string &name, nativeFunctionPointer function) {
-//  stack.push(Value{ copyString(name) });
-//  NativeObject* newNative = new NativeObject(function); // Q: how can I make sure this dynamically allocated memory gets deleted?
-//  stack.push(Value{ newNative });
-//  globals.insert(std::make_pair(stack.at(0).asString()->getChars(), stack.at(1)));
-//  stack.pop();
-//  stack.pop();
-//}
-
-StringObject* VM::copyString(const std::string &name) {
-  // Q: how can I make sure that stringObject gets deleted and memory gets freed at the right time?
-
-  std::unordered_map<std::string, Value>::iterator it = strings.find(name);
-  if (it == strings.end()) {
-    StringObject* stringObject = new StringObject(name);
-    strings.insert(std::make_pair(name, Value{ stringObject }));
-
-    return stringObject;
-  }
-
-  return (it->second).asString(); // Q: are parentheses necessary?
-}
-
-//Value VM::clockNative(int argCount, Value* args) {
-//  return Val{ (double)clock() / CLOCKS_PER_SEC };
-//}

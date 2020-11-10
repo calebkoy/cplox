@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
+// TODO: consider moving this into the Compiler class declaration
 enum Precedence {
   PRECEDENCE_NONE,
   PRECEDENCE_ASSIGNMENT,
@@ -22,14 +23,17 @@ enum Precedence {
   PRECEDENCE_PRIMARY
 };
 
+// TODO: get rid of this if it's not being used.
 typedef void (*ParseFn)();
 
+// TODO: get rid of this if it's not being used.
 struct ParseRule {
   ParseFn prefix;
   ParseFn infix;
   Precedence precedence;
 };
 
+// TODO: consider moving this into the Compiler class declaration
 struct ClassEnvironment {
   struct ClassEnvironment* enclosing;
   Token name;
@@ -158,7 +162,7 @@ public:
   // Q: how should objects be passed? Is reference fine, or should it be a double pointer?
   // See: https://stackoverflow.com/questions/10240161/reason-to-pass-a-pointer-by-reference-in-c
   // Q: better way to pass strings? Is it fine that caller doesn't know that it's being passed by reference?
-  Compiler(const std::vector<Token> tokens,
+  Compiler(const std::vector<Token> &tokens,
            std::unordered_map<std::string, Value> *strings);
 
   FunctionObject* compile();

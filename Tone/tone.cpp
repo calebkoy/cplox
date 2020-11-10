@@ -5,7 +5,6 @@
 
 #include <fstream>
 #include <iostream>
-#include <unordered_map>
 
 void Tone::repl() {
   std::string line;
@@ -46,29 +45,19 @@ void Tone::runFile(const char *path) {
   } while(size != read);
 
   InterpretResult result = interpret(source);
+  // TODO: ensure all memory has been cleaned up before exiting.
   if (result == INTERPRET_COMPILATION_ERROR) exit(65);
   if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
 
 InterpretResult Tone::interpret(const std::string &source) {
-  // TODO: instead of creating a scanner each time,
-  // it might be better to give Tone a scanner
-  //Scanner scanner{ source };
   scanner.reset();
   scanner.setSource(source);
   std::vector<Token> tokens = scanner.scanTokens();
 
-  // Q: does 'string interning' provide any value to Tone?
-  // If not, remove the strings map and the unordered_map header.
-  // Q: is it fine to leave this uninitialised?
-  std::unordered_map<std::string, Value> strings;
-
-  // Q: better way to pass objects pointer?
-  // Q: better way to pass unordered map?
-  //Compiler compiler{ tokens, &chunk, objects, strings };
   Compiler compiler{ tokens, &strings };
   FunctionObject* function = compiler.compile();
-  if (function == NULL) return INTERPRET_COMPILATION_ERROR;
+  if (function == nullptr) return INTERPRET_COMPILATION_ERROR;
 
   // Q: would it be more OOP if VM did the operations below?
 

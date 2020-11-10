@@ -11,7 +11,7 @@
 // Q: should I be using smart pointers and/or move semantics here
 // to ensure that there are no memory leaks?
 // See https://stackoverflow.com/questions/7575459/c-should-i-initialize-pointer-members-that-are-assigned-to-in-the-constructor
-Compiler::Compiler(const std::vector<Token> tokens,
+Compiler::Compiler(const std::vector<Token> &tokens,
                    std::unordered_map<std::string, Value> *strings) :
   tokens{ tokens }, strings{ strings } {
 

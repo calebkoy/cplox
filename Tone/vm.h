@@ -32,13 +32,6 @@ class VM {
   // Q: should this be initialised in a/the constructor?
   // Q: should the first template type be std::string?
   std::unordered_map<std::string, Value> globals; // Q: should this be a pointer?
-
-  std::unordered_map<std::string, Value> strings; // Q: Is this needed? // Q: should this be a pointer?
-
-  // Q: is there a better, more C++ way of keeping track of the list of
-  // heap allocated objects?
-  Object* objects;
-
   UpvalueObject* openUpvalues;
   StringObject* initString;
 
