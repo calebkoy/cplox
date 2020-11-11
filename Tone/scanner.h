@@ -98,7 +98,6 @@ class Scanner {
 public:
   std::vector<Token> scanTokens();
   void reset();
-
   void setSource(const std::string &source);
 };
 

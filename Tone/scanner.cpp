@@ -12,7 +12,7 @@ std::vector<Token> Scanner::scanTokens() {
 }
 
 bool Scanner::isAtEnd() {
-  return (current >= 0 && (size_t)current >= source.length());
+  return (current >= 0 && static_cast<size_t>(current) >= source.length());
 }
 
 void Scanner::scanToken() {
@@ -157,7 +157,7 @@ char Scanner::peek() {
 }
 
 char Scanner::peekNext() {
-  if (current + 1 >= 0 && (size_t)(current + 1) >= source.length()) return '\0';
+  if (current + 1 >= 0 && static_cast<size_t>(current + 1) >= source.length()) return '\0';
 
   return source[current + 1];
 }
