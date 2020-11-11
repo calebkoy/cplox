@@ -1,12 +1,13 @@
-#include "compiler.h"
-#include "scanner.h"
 #include "tone.h"
-#include "vm.h"
 
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <utility>
+
+Tone::Tone() : compiler{ &strings }
+{
+}
 
 void Tone::repl() {
   std::string line;
@@ -57,7 +58,8 @@ InterpretResult Tone::interpret(const std::string &source) {
   scanner.setSource(source);
   std::vector<Token> tokens = scanner.scanTokens();
 
-  Compiler compiler{ tokens, &strings };
+  compiler.reset();
+  compiler.setTokens(tokens);
   FunctionObject* function = compiler.compile();
   if (function == nullptr) return INTERPRET_COMPILATION_ERROR;
 

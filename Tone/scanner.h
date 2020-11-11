@@ -50,9 +50,9 @@ enum TokenType {
 };
 
 typedef struct {
-  TokenType type;
-  int line;
-  int length;
+  TokenType type{ TOKEN_NULL };
+  int line{ 0 };
+  int length{ 0 };
   std::string lexeme;
 } Token;
 

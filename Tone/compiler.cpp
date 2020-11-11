@@ -5,7 +5,17 @@
 
 //#define DEBUG_PRINT_CODE
 
-// Q: should there be a default constructor that sets pointer members to nullptr?
+// TODO: if you don't need the default ctor, consider = deleting it
+// (first check if that's an okay thing to do)
+Compiler::Compiler() : strings{ nullptr }
+{
+  currentEnvironment = new Environment(TYPE_SCRIPT, nullptr); // Q: how can I prevent memory leaks?
+}
+
+Compiler::Compiler(std::unordered_map<std::string, Value> *strings) : strings{ strings }
+{
+  currentEnvironment = new Environment(TYPE_SCRIPT, nullptr); // Q: how can I prevent memory leaks?
+}
 
 // Q: should I be using smart pointers and/or move semantics here
 // to ensure that there are no memory leaks?
@@ -31,7 +41,7 @@ void Compiler::advance() {
   previous = current;
 
   for (;;) {
-    current = tokens.at(currentTokenIndex++); // TODO: check if operator[] is faster than at()
+    current = tokens.at(currentTokenIndex++);
     if (current.type != TOKEN_ERROR) break;
 
     errorAtCurrent(current.lexeme);
@@ -1145,4 +1155,24 @@ void Compiler::errorAt(Token token, const std::string &message) {
 // Q: is it better to return a pointer to a Chunk?
 Chunk* Compiler::currentChunk() {
   return currentEnvironment->getFunction()->getChunk();
+}
+
+void Compiler::reset() {
+  // TODO: avoid memory leaks. There could be leaks from reassigning currentEnvironment
+  // as well as from using new w/o delete.
+  currentEnvironment = new Environment(TYPE_SCRIPT, nullptr);
+  currentClassEnvironment = nullptr;
+
+  currentTokenIndex = 0;
+  hadError = false;
+  panicMode = false;
+}
+
+void Compiler::setStrings(std::unordered_map<std::string, Value> *strings) {
+  // Q: is copy assignment the right thing to be doing, esp. since these are pointers?
+  this->strings = strings;
+}
+
+void Compiler::setTokens(const std::vector<Token> &tokens) {
+  this->tokens = tokens;
 }
