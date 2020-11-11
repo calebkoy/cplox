@@ -38,15 +38,12 @@ struct ClassEnvironment {
 class Compiler {
   std::vector<Token> tokens;
   std::unordered_map<std::string, Value> *strings;
-  //Environment* currentEnvironment;
   std::unique_ptr<Environment> currentEnvironment;
   ClassEnvironment* currentClassEnvironment{ nullptr };
   Token current;
   Token previous;
   ErrorReporter reporter;
   int currentTokenIndex{ 0 };
-  //bool hadError{ false };
-  //bool panicMode{ false };
   std::unordered_map<TokenType, Precedence> tokenPrecedence = {
     {TOKEN_LEFT_PAREN, PRECEDENCE_CALL},
     {TOKEN_RIGHT_PAREN, PRECEDENCE_NONE},
@@ -139,14 +136,6 @@ class Compiler {
   bool identifiersEqual(Token* a, Token* b); // TODO: consider extracting this; it's also used in Environment
   void string();
   StringObject* copyString(Token* name);
-
-  // TODO: remove these methods from the Compiler class
-  // if everything works with them in the Environment class
-  int resolveLocal(Environment* environment, Token* name);
-  int resolveUpvalue(Environment* environment, Token* name);
-  int addUpvalue(Environment* environment, uint8_t index, bool isLocal);
-
-  void* reallocate(void* pointer, size_t oldSize, size_t newSize); // Q: Where's the best place for this function to reside?
   void invokePrefixRule(bool canAssign);
   void invokeInfixRule(bool canAssign);
   void parsePrecedence(Precedence precedence);
@@ -156,9 +145,6 @@ class Compiler {
   uint8_t makeConstant(Value value);
   void emitReturn();
   FunctionObject* endCompiler();
-  void errorAtCurrent(const std::string &message);
-  void error(const std::string &message);
-  void errorAt(Token token, const std::string &message);
 
 public:
   Compiler(std::unordered_map<std::string, Value> *strings);

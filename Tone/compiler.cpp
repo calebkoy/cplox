@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <limits>
-#include <utility> // for std::move. TODO: remove if not using std::move
+#include <utility>
 
 //#define DEBUG_PRINT_CODE
 
@@ -10,7 +10,6 @@ Compiler::Compiler(std::unordered_map<std::string, Value> *strings) :
   strings{ strings },
   currentEnvironment{ std::make_unique<Environment>(TYPE_SCRIPT, nullptr, reporter) }
 {
-  //currentEnvironment = new Environment(TYPE_SCRIPT, nullptr); // Q: how can I prevent memory leaks?
 }
 
 FunctionObject* Compiler::compile() {
@@ -20,7 +19,6 @@ FunctionObject* Compiler::compile() {
   }
 
   FunctionObject* function = endCompiler();
-  //return hadError ? nullptr : function;
   return reporter.hadError() ? nullptr : function;
 }
 
@@ -31,7 +29,6 @@ void Compiler::advance() {
     current = tokens.at(currentTokenIndex++);
     if (current.type != TOKEN_ERROR) break;
 
-    //errorAtCurrent(current.lexeme);
     reporter.error(current, current.lexeme);
   }
 }
@@ -47,7 +44,6 @@ void Compiler::declaration() {
     statement();
   }
 
-  //if (panicMode) synchronise();
   if (reporter.panicMode()) synchronise();
 }
 
@@ -59,12 +55,9 @@ void Compiler::functionDeclaration() {
 }
 
 void Compiler::function(FunctionType type) {
-  //Environment* environment = new Environment{ type, currentEnvironment }; // Q: how to ensure memory isn't leaked?
-  //currentEnvironment = environment;
-
-  //auto environment{ std::make_unique<Environment>(type, currentEnvironment.get()) };
-  //*currentEnvironment = *environment;
-  currentEnvironment = std::make_unique<Environment>(type, std::move(currentEnvironment), reporter);
+  currentEnvironment = std::make_unique<Environment>(type,
+                                                     std::move(currentEnvironment),
+                                                     reporter);
 
   if (type != TYPE_SCRIPT) {
     currentEnvironment->getFunction()->setName(copyString(&previous));
@@ -77,7 +70,6 @@ void Compiler::function(FunctionType type) {
     do {
       currentEnvironment->getFunction()->incrementArity();
       if (currentEnvironment->getFunction()->getArity() > 255) {
-        //errorAtCurrent("Cannot have more than 255 parameters.");
         reporter.error(current, "Cannot have more than 255 parameters.");
       }
 
@@ -93,11 +85,6 @@ void Compiler::function(FunctionType type) {
   auto upvalues = currentEnvironment->releaseUpvalues();
   FunctionObject* function = endCompiler();
   emitBytes(OP_CLOSURE, makeConstant(Value{ function }));
-
-//  for (int i = 0; i < function->getUpvalueCount(); i++) {
-//    emitByte(environment->getUpvalue(i)->isLocal ? 1 : 0);
-//    emitByte(environment->getUpvalue(i)->index);
-//  }
   for (const auto &upvalue : upvalues) {
     emitByte(upvalue.isLocal ? 1 : 0);
     emitByte(upvalue.index);
@@ -133,7 +120,6 @@ void Compiler::classDeclaration() {
   currentClassEnvironment = &classEnvironment;
 
   if (match(TOKEN_LESS)) {
-    // Emit instructions to load the superclass variable's value.
     consume(TOKEN_IDENTIFIER, "Expect superclass name.");
     variable(false);
 
@@ -151,7 +137,6 @@ void Compiler::classDeclaration() {
 
     defineVariable(0);
 
-    // Load the subclass doing the inheriting onto the stack.
     namedVariable(className, false);
     emitByte(OP_INHERIT);
 
@@ -372,24 +357,6 @@ void Compiler::block() {
 
 void Compiler::beginScope() {
   currentEnvironment->incrementScopeDepth();
-
-#ifdef DEBUG_ENV_CODE
-  // Debug the current env
-  std::cout << "Just incremented scope depth" << '\n';
-  std::cout << "Current env's function name: ";
-  if (currentEnvironment->getFunction()->getName() == NULL) {
-    std::cout << "null" << '\n';
-  } else {
-    std::cout << currentEnvironment->getFunction()->getName()->getChars() << '\n';
-  }
-  std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
-  std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
-  std::cout << "Current env locals: " << '\n';
-  for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
-    std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
-  }
-  std::cout << '\n';
-#endif // DEBUG_ENV_CODE
 }
 
 void Compiler::endScope() {
@@ -408,9 +375,7 @@ void Compiler::endScope() {
 }
 
 void Compiler::synchronise() {
-  //panicMode = false;
   reporter.exitPanicMode();
-
   while (current.type != TOKEN_EOF) {
     if (previous.type == TOKEN_SEMICOLON) return;
 
@@ -708,12 +673,10 @@ void Compiler::variable(bool canAssign) {
 void Compiler::namedVariable(Token name, bool canAssign) {
   uint8_t getOp, setOp;
   int arg = currentEnvironment->resolveLocal(name);
-  //int arg = resolveLocal(currentEnvironment.get(), &name);
   if (arg != -1) {
     getOp = OP_GET_LOCAL;
     setOp = OP_SET_LOCAL;
   } else if ((arg = currentEnvironment->resolveUpvalue(name)) != -1) {
-  //} else if ((arg = resolveUpvalue(currentEnvironment.get(), &name)) != -1) {
     getOp = OP_GET_UPVALUE;
     setOp = OP_SET_UPVALUE;
   } else {
@@ -730,64 +693,6 @@ void Compiler::namedVariable(Token name, bool canAssign) {
   }
 }
 
-// TODO: remove if no longer useful
-//int Compiler::resolveLocal(Environment* environment, Token* name) {
-//  for (int i = environment->getLocalCount() - 1; i >= 0; i--) {
-//    Local* local = environment->getLocal(i);
-//    if (identifiersEqual(name, &local->name)) {
-//      if (local->depth == -1) {
-//        error("Cannot read local variable in its own initializer.");
-//      }
-//      return i;
-//    }
-//  }
-//
-//  return -1;
-//}
-
-// TODO: remove if no longer useful
-//int Compiler::resolveUpvalue(Environment* environment, Token* name) {
-//  if (environment->getEnclosing() == nullptr) return -1;
-//
-//  int local = resolveLocal(environment->getEnclosing(), name);
-//  if (local != -1) {
-//    environment->getEnclosing()->getLocal(local)->isCaptured = true;
-//    return addUpvalue(environment, (uint8_t)local, true);
-//  }
-//
-//  int upvalue = resolveUpvalue(environment->getEnclosing(), name);
-//  if (upvalue != -1) {
-//    return addUpvalue(environment, (uint8_t)upvalue, false);
-//  }
-//
-//  return -1;
-//}
-
-// TODO: remove if no longer useful
-//int Compiler::addUpvalue(Environment* environment, uint8_t index, bool isLocal) {
-//  int upvalueCount = environment->getFunction()->getUpvalueCount();
-//
-//  for (int i = 0; i < upvalueCount; i++) {
-//    Upvalue* upvalue = environment->getUpvalue(i);
-//    if (upvalue->index == index && upvalue->isLocal == isLocal) {
-//      return i;
-//    }
-//  }
-//
-//  // TODO: consider putting the return value of getUint8Count in a constants.h
-//  // file for global constants
-//  if (upvalueCount == Environment::getUint8Count()) {
-//    error("Too many closure variables in function.");
-//    return 0;
-//  }
-//
-//  environment->getUpvalue(upvalueCount)->isLocal = isLocal; // Q: should getUpvalue return a pointer instead?
-//  environment->getUpvalue(upvalueCount)->index = index;
-//  environment->getFunction()->incrementUpvalueCount();
-//
-//  return upvalueCount;
-//}
-
 StringObject* Compiler::copyString(Token* name) {
   // Q: how can I make sure that stringObject gets deleted and memory gets freed at the right time?
 
@@ -799,18 +704,6 @@ StringObject* Compiler::copyString(Token* name) {
   }
 
   return (it->second).asString(); // Q: are parentheses necessary?
-}
-
-// Q: is this function necessary?
-void* Compiler::reallocate(void* pointer, size_t oldSize, size_t newSize) {
-  if (newSize == 0) {
-    free(pointer);
-    return NULL;
-  }
-
-  void* result = realloc(pointer, newSize);
-  if (result == NULL) exit(1); // Q: can I do something better than exit(1)?
-  return result;
 }
 
 // Q: should this class be passed by value?
@@ -853,24 +746,6 @@ void Compiler::declareVariable() {
   }
 
   currentEnvironment->addLocal(*name);
-
-#ifdef DEBUG_ENV_CODE
-  // Debug the current env
-  std::cout << "Just added local to current env" << '\n';
-  std::cout << "Current env's function name: ";
-  if (currentEnvironment->getFunction()->getName() == NULL) {
-    std::cout << "null" << '\n';
-  } else {
-    std::cout << currentEnvironment->getFunction()->getName()->getChars() << '\n';
-  }
-  std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
-  std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
-  std::cout << "Current env locals: " << '\n';
-  for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
-    std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
-  }
-  std::cout << '\n';
-#endif // DEBUG_ENV_CODE
 }
 
 bool Compiler::identifiersEqual(Token* a, Token* b) {
@@ -889,34 +764,8 @@ void Compiler::defineVariable(uint8_t global) {
 
 void Compiler::markInitialised() {
   if (currentEnvironment->getScopeDepth() == 0) return;
-
-#ifdef DEBUG_ENV_CODE
-  std::cout << "Depth of local at index " << currentEnvironment->getLocalCount() - 1 << ": " <<
-            currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1)->depth << '\n';
-#endif // DEBUG_ENV_CODE
-
   // TODO: try to make this more readable.
   currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1)->depth = currentEnvironment->getScopeDepth();
-
-#ifdef DEBUG_ENV_CODE
-  // Debug the current env
-  std::cout << "Just updated the depth of the local at index " << currentEnvironment->getLocalCount()-1 << '\n';
-  std::cout << "New depth: " << currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1)->depth << '\n';
-
-  std::cout << "\nCurrent env's function name: ";
-  if (currentEnvironment->getFunction()->getName() == NULL) {
-    std::cout << "null" << '\n';
-  } else {
-    std::cout << currentEnvironment->getFunction()->getName()->getChars() << '\n';
-  }
-  std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
-  std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
-  std::cout << "Current env locals: " << '\n';
-  for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
-    std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
-  }
-  std::cout << '\n';
-#endif // DEBUG_ENV_CODE
 }
 
 void Compiler::consume(TokenType type, const std::string &message) {
@@ -927,7 +776,6 @@ void Compiler::consume(TokenType type, const std::string &message) {
     return;
   }
 
-  //errorAtCurrent(message);
   reporter.error(current, message);
 }
 
@@ -985,37 +833,7 @@ FunctionObject* Compiler::endCompiler() {
   if (!reporter.hadError()) currentChunk()->disassemble(function->getName() != NULL ? function->getName()->getChars() : "<script>");
 #endif // DEBUG_PRINT_CODE
 
-  //currentEnvironment = currentEnvironment->getEnclosing();
-  //*currentEnvironment = *(currentEnvironment->getEnclosing());
   currentEnvironment = currentEnvironment->releaseEnclosing();
-
-#ifdef DEBUG_ENV_CODE
-  // Debug the current env
-  std::cout << "Just set current env to the enclosing env\n";
-  std::cout << "Current env's function name: ";
-  if (currentEnvironment == NULL) {
-    std::cout << "null" << '\n';
-  } else if (currentEnvironment->getFunction()->getName() == NULL) {
-    std::cout << "null" << '\n';
-    std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
-    std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
-    std::cout << "Current env locals: " << '\n';
-    for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
-      std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
-    }
-    std::cout << '\n';
-  } else {
-    std::cout << currentEnvironment->getFunction()->getName()->getChars() << '\n';
-    std::cout << "Current env scope depth: " << currentEnvironment->getScopeDepth() << '\n';
-    std::cout << "Current env local count: " << currentEnvironment->getLocalCount() << '\n';
-    std::cout << "Current env locals: " << '\n';
-    for (int i = 0; i < currentEnvironment->getLocalCount(); i++) {
-      std::cout << currentEnvironment->getLocal(i)->name.lexeme << '\n';
-    }
-    std::cout << '\n';
-  }
-#endif // DEBUG_ENV_CODE
-
   return function;
 }
 
@@ -1028,32 +846,6 @@ void Compiler::emitReturn() {
   emitByte(OP_RETURN);
 }
 
-//void Compiler::error(const std::string &message) {
-//  errorAt(previous, message);
-//}
-//
-//void Compiler::errorAtCurrent(const std::string &message) {
-//  errorAt(current, message);
-//}
-//
-//void Compiler::errorAt(Token token, const std::string &message) {
-//  if (panicMode) return;
-//  panicMode = true;
-//
-//  std::cerr << "[line " << token.line << "] Error";
-//
-//  if (token.type == TOKEN_EOF) {
-//    std::cerr << " at end";
-//  } else if (token.type == TOKEN_ERROR) {
-//    // Nothing. Sure?
-//  } else {
-//    std::cerr << " at " << "'" << token.lexeme << "'";
-//  }
-//
-//  std::cerr << ": " << message << '\n';
-//  hadError = true;
-//}
-
 // Q: is it better to return a pointer to a Chunk?
 Chunk* Compiler::currentChunk() {
   return currentEnvironment->getFunction()->getChunk();
@@ -1061,10 +853,6 @@ Chunk* Compiler::currentChunk() {
 
 void Compiler::reset() {
   currentTokenIndex = 0;
-
-  // TODO: reset these in the ErrorReporter if necessary
-  //hadError = false;
-  //panicMode = false;
   reporter.reset();
 }
 
