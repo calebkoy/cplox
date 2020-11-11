@@ -35,9 +35,9 @@ struct ClassEnvironment {
 
 class Compiler {
   std::vector<Token> tokens;
+  std::unordered_map<std::string, Value> *strings;
   Environment* currentEnvironment; // Q: should this be a pointer?
   ClassEnvironment* currentClassEnvironment{ nullptr };
-  std::unordered_map<std::string, Value> *strings;
   Token current;
   Token previous;
   int currentTokenIndex{ 0 };
@@ -151,21 +151,13 @@ class Compiler {
   void errorAtCurrent(const std::string &message);
   void error(const std::string &message);
   void errorAt(Token token, const std::string &message);
-public:
-  Compiler(); // TODO: remove this ctor if the new version of Tone works.
-  Compiler(std::unordered_map<std::string, Value> *strings);
 
-  // TODO: remove this ctor if the new version of Tone works.
-  // Q: how should objects be passed? Is reference fine, or should it be a double pointer?
-  // See: https://stackoverflow.com/questions/10240161/reason-to-pass-a-pointer-by-reference-in-c
-  // Q: better way to pass strings? Is it fine that caller doesn't know that it's being passed by reference?
-  Compiler(const std::vector<Token> &tokens,
-           std::unordered_map<std::string, Value> *strings);
+public:
+  Compiler(std::unordered_map<std::string, Value> *strings);
 
   FunctionObject* compile();
   void reset();
 
-  void setStrings(std::unordered_map<std::string, Value> *strings); // TODO: remove this if setStrings isn't used in tone.cpp
   void setTokens(const std::vector<Token> &tokens);
 };
 

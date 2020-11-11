@@ -5,25 +5,8 @@
 
 //#define DEBUG_PRINT_CODE
 
-// TODO: if you don't need the default ctor, consider = deleting it
-// (first check if that's an okay thing to do)
-Compiler::Compiler() : strings{ nullptr }
-{
-  currentEnvironment = new Environment(TYPE_SCRIPT, nullptr); // Q: how can I prevent memory leaks?
-}
-
 Compiler::Compiler(std::unordered_map<std::string, Value> *strings) : strings{ strings }
 {
-  currentEnvironment = new Environment(TYPE_SCRIPT, nullptr); // Q: how can I prevent memory leaks?
-}
-
-// Q: should I be using smart pointers and/or move semantics here
-// to ensure that there are no memory leaks?
-// See https://stackoverflow.com/questions/7575459/c-should-i-initialize-pointer-members-that-are-assigned-to-in-the-constructor
-Compiler::Compiler(const std::vector<Token> &tokens,
-                   std::unordered_map<std::string, Value> *strings) :
-  tokens{ tokens }, strings{ strings } {
-
   currentEnvironment = new Environment(TYPE_SCRIPT, nullptr); // Q: how can I prevent memory leaks?
 }
 
@@ -1158,19 +1141,9 @@ Chunk* Compiler::currentChunk() {
 }
 
 void Compiler::reset() {
-  // TODO: avoid memory leaks. There could be leaks from reassigning currentEnvironment
-  // as well as from using new w/o delete.
-  currentEnvironment = new Environment(TYPE_SCRIPT, nullptr);
-  currentClassEnvironment = nullptr;
-
   currentTokenIndex = 0;
   hadError = false;
   panicMode = false;
-}
-
-void Compiler::setStrings(std::unordered_map<std::string, Value> *strings) {
-  // Q: is copy assignment the right thing to be doing, esp. since these are pointers?
-  this->strings = strings;
 }
 
 void Compiler::setTokens(const std::vector<Token> &tokens) {

@@ -48,7 +48,6 @@ void Tone::runFile(const char *path) {
   } while(size != read);
 
   InterpretResult result = interpret(source);
-  // TODO: ensure all memory has been cleaned up before exiting.
   if (result == INTERPRET_COMPILATION_ERROR) exit(65);
   if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
