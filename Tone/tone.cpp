@@ -3,7 +3,6 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
-#include <utility>
 
 Tone::Tone() : compiler{ &strings }
 {
