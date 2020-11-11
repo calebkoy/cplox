@@ -515,10 +515,6 @@ bool VM::valuesEqual(Value a, Value b) {
   }
 }
 
-Stack* VM::getStack() {
-  return &stack;
-}
-
 bool VM::callValue(Value callee, int argCount) {
   if (callee.isObject()) {
     switch (callee.getObjectType()) {

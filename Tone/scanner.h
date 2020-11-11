@@ -32,7 +32,7 @@ enum TokenType {
   TOKEN_CLASS,
   TOKEN_VAR,
   TOKEN_EXTENDS,
-  TOKEN_PRINT, // Remove once print() library function has been implemented
+  TOKEN_PRINT,
   TOKEN_FOR,
   TOKEN_WHILE,
   TOKEN_IF,
@@ -51,8 +51,7 @@ enum TokenType {
 
 typedef struct {
   TokenType type;
-  int line; // Q: Is this needed?
-  int start;
+  int line;
   int length;
   std::string lexeme;
 } Token;
@@ -88,7 +87,7 @@ class Scanner {
   char advance();
   bool isDigit(char c);
   bool isAlpha(char c);
-  void addToken(TokenType type, const std::string &lexeme, int start, int length);
+  void addToken(TokenType type, const std::string &lexeme, int length);
   bool match(char c);
   char peek();
   char peekNext();
