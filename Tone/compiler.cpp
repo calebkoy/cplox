@@ -693,13 +693,20 @@ void Compiler::namedVariable(Token name, bool canAssign) {
   }
 }
 
+// TODO: pass by const reference. This needs to be done in several places...
 StringObject* Compiler::copyString(Token* name) {
   // Q: how can I make sure that stringObject gets deleted and memory gets freed at the right time?
 
   std::unordered_map<std::string, Value>::iterator it = strings->find(name->lexeme);
   if (it == strings->end()) {
-    StringObject* stringObject = new StringObject(name->lexeme);
-    strings->insert(std::make_pair(name->lexeme, Value{ stringObject }));
+//    StringObject* stringObject = new StringObject(name->lexeme);
+//    strings->insert(std::make_pair(name->lexeme, Value{ stringObject }));
+
+    auto stringObject{ std::make_unique<StringObject>(name->lexeme) };
+    Value value{ std::move(stringObject) };
+    strings->insert(std::make_pair(name->lexeme,
+                                   value));
+
     return stringObject;
   }
 

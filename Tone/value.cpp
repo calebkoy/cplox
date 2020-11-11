@@ -5,13 +5,16 @@
 #include "boundmethodobject.h"
 
 #include <iostream>
+#include <utility> // for std::move. TODO: remove if not using move
 
 // Q: does it matter that this logic was somewhat arbitrarily chosen?
-// Q: is this ctor even necessary?
-Value::Value() : type{ VAL_NUMBER }
-{
-  as.number = 0;
-}
+// Q: is this ctor even necessary? Esp. if you're following the pattern in:
+// https://stackoverflow.com/questions/24713833/using-a-union-with-unique-ptr
+//Value::Value() : type{ VAL_NUMBER }
+//{
+//  as.number = 0;
+//}
+Value::Value() {} // Q: is it even necessary to write this here? would it be the same w/o?
 
 Value::Value(bool boolean) : type{ VAL_BOOL }
 {
@@ -26,12 +29,18 @@ Value::Value(bool boolean) : type{ VAL_BOOL }
 //  as.object = object.get();
 //}
 
-Value::Value(Object* object) : type{ VAL_OBJECT }
-{
-  // Q: what to do if type != VAL_OBJECT?
+//Value::Value(Object* object) : type{ VAL_OBJECT }
+//{
+//
+//  as.object = object; // Q: is pointer assignment correct here? Could we have leaks and/or other issues?
+//  //as.object = std::move(object);
+//}
 
-  as.object = object; // Q: is pointer assignment correct here? Could we have leaks and/or other issues?
+Value::Value(std::unique_ptr<Object> object)
+{
   //as.object = std::move(object);
+  new (&as.object) std::unique_ptr<Object>{ std::move(object) };
+  type = VAL_OBJECT; // Q: is the unionType:: necessary?
 }
 
 Value::Value(ValueType type, double number = 0) {
@@ -50,6 +59,20 @@ Value::Value(ValueType type, double number = 0) {
   // Q: what if someone passes in VAL_OBJ?
 
   this->type = type;
+}
+
+Value::~Value() {
+  switch (type) {
+    // Q: is the unionType:: prefix necessary?
+    case VAL_BOOL:
+    case VAL_NUMBER:
+    case VAL_NULL:
+      break;
+
+    case VAL_OBJECT:
+      as.object.~unique_ptr<Object>();
+      break;
+  }
 }
 
 bool Value::asBool() const {

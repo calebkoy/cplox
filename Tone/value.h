@@ -5,18 +5,18 @@
 #include "stringobject.h"
 
 #include <iostream>
-#include <memory>
-#include <variant>
+#include <memory> // TODO: remove if not using std::unique_ptr
 
-typedef enum {
-  VAL_BOOL,
-  VAL_NULL,
-  VAL_NUMBER,
-  VAL_OBJECT
-} ValueType;
+//enum class ValueType {
+//  VAL_BOOL,
+//  VAL_NULL,
+//  VAL_NUMBER,
+//  VAL_OBJECT,
+//  VAL_NONE
+//};
 
 class Value {
-  ValueType type;
+  //ValueType type;
 
   // Q: is union part of the official C++ standard?
   // This webpage suggests it isn't: https://gamedev.net/forums/topic/517279-c-making-a-union-inside-a-class/4362327/
@@ -25,19 +25,26 @@ class Value {
     bool boolean;
     double number;
     //TODO: consider using: std::unique_ptr<Object> object;
-    Object* object;
-  } as;
-
-//  std::variant<bool, double, std::unique_ptr<Object>> as;
+    std::unique_ptr<Object> object;
+    //Object* object;
+  } as; // Q: should you use 'as' here? Does it have any real benefit? What would it be like w/o it?
 
 public:
+  enum class ValueType {
+    VAL_BOOL,
+    VAL_NUMBER,
+    VAL_OBJECT,
+    VAL_NULL,
+    VAL_NONE
+  } type = ValueType::VAL_NONE;
+
   Value();
   Value(bool boolean);
-
-  //Value(std::shared_ptr<Object> object);
-  Value(Object* object); // TODO: get rid of this if the program works with a smart pointer
-
+  Value(std::unique_ptr<Object> object);
+  //Value(Object* object); // TODO: get rid of this if the program works with a smart pointer
   Value(ValueType type, double number);
+
+  ~Value();
 
   bool asBool() const;
   double asNumber() const;
@@ -70,15 +77,15 @@ public:
 
   friend std::ostream& operator<<(std::ostream& out, const Value &value) {
     switch (value.type) {
-      case VAL_BOOL:
+      case ValueType::VAL_BOOL:
         value.asBool() ? out << "true" : out << "false";
         break;
-      case VAL_NULL: out << "null"; break;
-      case VAL_NUMBER: out << value.asNumber(); break;
+      case ValueType::VAL_NULL: out << "null"; break;
+      case ValueType::VAL_NUMBER: out << value.asNumber(); break;
 
       // Q: what's the cleaner way to do this using inheritance
       // and/or polymorphism?
-      case VAL_OBJECT:
+      case ValueType::VAL_OBJECT:
         if (value.isString()) {
           out << *(value.asString());
         } else if (value.isFunction()) {

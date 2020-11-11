@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
+// TODO: use an enum class.
+// See https://www.learncpp.com/cpp-tutorial/4-5a-enum-classes/
 enum TokenType {
   // Single-character tokens
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN,
