@@ -627,14 +627,6 @@ void VM::closeUpvalues(Value* last) {
   }
 }
 
-CallFrame* VM::getCallFrames() {
-  return callFrames;
-}
-
-int VM::getCallFrameCount() {
-  return callFrameCount;
-}
-
-void VM::incrementCallFrameCount() {
-  callFrameCount++;
+void VM::pushOntoStack(const Value &value) {
+  stack.push(value);
 }

@@ -24,9 +24,8 @@ struct CallFrame {
 
 class VM {
   static const int callFramesMax = 64;
-  CallFrame callFrames[callFramesMax]; // Q: is there a better C++ way of implementing the callframes concept?
+  CallFrame callFrames[callFramesMax];
   int callFrameCount;
-
   Stack stack;
 
   // Q: should this be initialised in a/the constructor?
@@ -53,7 +52,6 @@ class VM {
   bool valuesEqual(Value a, Value b);
 
   bool callValue(Value callee, int argCount);
-  bool call(ClosureObject* closure, int argCount);
   UpvalueObject* captureUpvalue(Value* local);
   void closeUpvalues(Value* last);
   void defineMethod(StringObject* name);
@@ -64,21 +62,12 @@ class VM {
 
 public:
   VM();
+
   InterpretResult interpret();
   InterpretResult run();
-
-  // Todo: get rid of this when all the code is working.
-  // Q: how should Chunk be passed?
-  void setChunk(Chunk chunk);
-
-  // Todo: get rid of this when all the code is working.
-  void resetProgramCounter();
-
-  void incrementCallFrameCount();
-
-  Stack* getStack();
-  CallFrame* getCallFrames();
-  int getCallFrameCount();
+  bool call(ClosureObject* closure, int argCount);
+  void pushOntoStack(const Value &value);
+  Value* getStackTop();
 };
 
 #endif // VM_H

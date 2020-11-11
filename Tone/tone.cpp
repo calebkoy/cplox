@@ -61,27 +61,8 @@ InterpretResult Tone::interpret(const std::string &source) {
   FunctionObject* function = compiler.compile();
   if (function == nullptr) return INTERPRET_COMPILATION_ERROR;
 
-  // Q: would it be more OOP if VM did the operations below?
-
-  // Wrap the FunctionObject* in a ClosureObject*
-  // Wrap the ClosureObject* in a Value
-  // Push the Value onto the VM's stack
-  // Create a CallFrame that contains the closure and the Value on top of the VM's stack
-  // and which has an instruction program counter of zero (it points to the first index
-  // of the function's chunk's bytecode array)
-
-  //ClosureObject* closure = new ClosureObject{ function }; // Q: how to avoid memory leaks?
   auto closure{ std::make_unique<ClosureObject>(function) };
-  //auto closure{ std::make_shared<ClosureObject>(function) };
-
-  // TODO: call a single function defined on VM to do this
-  //vm.getStack()->push(Value{ std::move(closure) });
-  vm.getStack()->push(Value{ closure.get() });
-  //vm.getStack()->push(Value{ closure });
-
-  CallFrame frame = { closure.get(), 0, vm.getStack()->getTop() - 1 };
-  vm.getCallFrames()[vm.getCallFrameCount()] = frame;
-  vm.incrementCallFrameCount();
-
+  vm.pushOntoStack(Value{ closure.get() });
+  vm.call(closure.get(), 0);
   return vm.run();
 }
