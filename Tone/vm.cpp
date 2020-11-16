@@ -1,25 +1,26 @@
+#include "value.h"
 #include "vm.h"
-#include "nativeobject.h"
 #include "closureobject.h"
 #include "instanceobject.h"
 #include "boundmethodobject.h"
 
 #include <iostream>
+#include <memory> // for std::shared_ptr; remove if not using
 #include <stdarg.h> // Q: is this needed (for runtimeError())?
 
 //#define DEBUG_TRACE_EXECUTION
 
-#define AS_FUNCTION(object)  ((FunctionObject*)(object)) // Q: is there a better way of doing this than a macro?
-#define AS_CLOSURE(object)  ((ClosureObject*)(object)) // Q: ditto
-#define AS_NATIVE(object)        (((NativeObject*)(object))->getFunction()) // Q: ditto
-#define AS_INSTANCE(object)        ((InstanceObject*)(object)) // Q: ditto
-#define AS_CLASS(object)        ((ClassObject*)(object)) // Q: ditto
-#define AS_BOUND_METHOD(object)        ((BoundMethodObject*)(object)) // Q: ditto
+// TODO: consider removing these macros!
+//#define AS_FUNCTION(object)  ((FunctionObject*)(object)) // Q: is there a better way of doing this than a macro?
+//#define AS_CLOSURE(object)  ((ClosureObject*)(object)) // Q: ditto
+//#define AS_INSTANCE(object)        ((InstanceObject*)(object)) // Q: ditto
+//#define AS_CLASS(object)        ((ClassObject*)(object)) // Q: ditto
+//#define AS_BOUND_METHOD(object)        ((BoundMethodObject*)(object)) // Q: ditto
 
 VM::VM() {
   openUpvalues = nullptr;
   callFrameCount = 0;
-  initString = new StringObject("init"); // TODO: do this better so memory isn't leaked
+  initString = std::make_unique<StringObject>("init");
 }
 
 // Q: is this needed?
@@ -46,7 +47,7 @@ InterpretResult VM::run() {
         break;
       }
       // Q: how can I write this so I don't have to pass in 0?
-      case OP_NULL: stack.push(Value{ VAL_NULL, 0 }); break;
+      case OP_NULL: stack.push(Value{ Value::ValueType::VAL_NULL, 0 }); break;
       case OP_TRUE: stack.push(Value{ true }); break;
       case OP_FALSE: stack.push(Value{ false }); break;
       case OP_POP: stack.pop(); break;
@@ -64,7 +65,7 @@ InterpretResult VM::run() {
       }
 
       case OP_GET_GLOBAL: {
-        StringObject* name = readString(frame);
+        auto name = readString(frame);
         Value value;
         std::unordered_map<std::string, Value>::iterator it = globals.find(name->getChars());
         if (it == globals.end()) {
@@ -76,14 +77,14 @@ InterpretResult VM::run() {
         break;
       }
       case OP_DEFINE_GLOBAL: {
-        StringObject* name = readString(frame);
+        auto name = readString(frame);
         globals[name->getChars()] = stack.peek(0);
         stack.pop();
         break;
       }
 
       case OP_SET_GLOBAL: {
-        StringObject* name = readString(frame);
+        auto name = readString(frame);
         std::unordered_map<std::string, Value>::iterator it = globals.find(name->getChars());
         if (it == globals.end()) {
           // Implicit variable declaration not allowed
@@ -115,8 +116,9 @@ InterpretResult VM::run() {
           return INTERPRET_RUNTIME_ERROR;
         }
 
-        InstanceObject* instance = AS_INSTANCE(stack.peek(0).asObject());
-        StringObject* name = readString(frame);
+        //InstanceObject* instance = AS_INSTANCE(stack.peek(0).asObject());
+        auto instance = std::static_pointer_cast<InstanceObject>(stack.peek(0).asObject());
+        auto name = readString(frame);
 
         Value value;
 
@@ -127,7 +129,7 @@ InterpretResult VM::run() {
           break;
         }
 
-        if (!bindMethod(instance->getKlass(), name)) {
+        if (!bindMethod(instance->getKlass(), name.get())) {
           return INTERPRET_RUNTIME_ERROR;
         }
         break;
@@ -139,7 +141,8 @@ InterpretResult VM::run() {
           return INTERPRET_RUNTIME_ERROR;
         }
 
-        InstanceObject* instance = AS_INSTANCE(stack.peek(1).asObject());
+        //InstanceObject* instance = AS_INSTANCE(stack.peek(1).asObject());
+        auto instance = std::static_pointer_cast<InstanceObject>(stack.peek(1).asObject());
         instance->setField(readString(frame)->getChars(), stack.peek(0));
         Value value = stack.pop();
         stack.pop();
@@ -148,9 +151,10 @@ InterpretResult VM::run() {
       }
 
       case OP_GET_SUPER: {
-        StringObject* name = readString(frame);
-        ClassObject* superclass = AS_CLASS(stack.pop().asObject());
-        if (!bindMethod(superclass, name)) {
+        auto name = readString(frame);
+        //ClassObject* superclass = AS_CLASS(stack.pop().asObject());
+        auto superclass = std::static_pointer_cast<ClassObject>(stack.pop().asObject());
+        if (!bindMethod(superclass.get(), name.get())) {
           return INTERPRET_RUNTIME_ERROR;
         }
         break;
@@ -178,11 +182,12 @@ InterpretResult VM::run() {
         break;
       case OP_ADD:
         if (stack.peek(0).isString() && stack.peek(1).isString()) {
-          StringObject* b = stack.pop().asString();
-          StringObject* a = stack.pop().asString();
+          auto b = stack.pop().asString();
+          auto a = stack.pop().asString();
 
           // Q: how do I ensure that memory isn't leaked here and around here?
-          StringObject* result = new StringObject((*a).getChars() + (*b).getChars());
+          //StringObject* result = new StringObject((*a).getChars() + (*b).getChars());
+          auto result{ std::make_shared<StringObject>((*a).getChars() + (*b).getChars()) };
           stack.push(Value{ result });
         } else if (stack.peek(0).isNumber() && stack.peek(1).isNumber()) {
           add();
@@ -222,7 +227,7 @@ InterpretResult VM::run() {
         }
 
         double negatedValue = -(stack.pop().asNumber());
-        stack.push(Value{ VAL_NUMBER, negatedValue });
+        stack.push(Value{ Value::ValueType::VAL_NUMBER, negatedValue });
         break;
       }
       case OP_PRINT: {
@@ -261,9 +266,9 @@ InterpretResult VM::run() {
       }
 
       case OP_INVOKE: {
-        StringObject* method = readString(frame);
+        auto method = readString(frame);
         int argCount = readByte(frame);
-        if (!invoke(method, argCount)) {
+        if (!invoke(method.get(), argCount)) {
           return INTERPRET_RUNTIME_ERROR;
         }
         frame = &(callFrames[callFrameCount - 1]);
@@ -271,10 +276,11 @@ InterpretResult VM::run() {
       }
 
       case OP_SUPER_INVOKE: {
-        StringObject* method = readString(frame);
+        auto method = readString(frame);
         int argCount = readByte(frame);
-        ClassObject* superclass = AS_CLASS(stack.pop().asObject());
-        if (!invokeFromClass(superclass, method, argCount)) {
+        //ClassObject* superclass = AS_CLASS(stack.pop().asObject());
+        auto superclass = std::static_pointer_cast<ClassObject>(stack.pop().asObject());
+        if (!invokeFromClass(superclass.get(), method.get(), argCount)) {
           return INTERPRET_RUNTIME_ERROR;
         }
         frame = &(callFrames[callFrameCount - 1]);
@@ -282,8 +288,15 @@ InterpretResult VM::run() {
       }
 
       case OP_CLOSURE: {
-        FunctionObject* function = AS_FUNCTION(readConstant(frame).asObject());
-        ClosureObject* closure = new ClosureObject(function); // Q: how do I avoid memory leaks here?
+        //FunctionObject* function = AS_FUNCTION(readConstant(frame).asObject());
+        auto function = std::static_pointer_cast<FunctionObject>(readConstant(frame).asObject());
+
+        // TODO: be very careful here. The FunctionObject pointer prob points to
+        // heap-allocated memory. If you're going to wrap it in a std::shared_ptr,
+        // you prob want to do this using copy initialisation and by passing in another
+        // std::shared_ptr. See https://www.learncpp.com/cpp-tutorial/15-6-stdshared_ptr/
+        //ClosureObject* closure = new ClosureObject(function); // Q: how do I avoid memory leaks here?
+        auto closure{ std::make_shared<ClosureObject>(function) };
         stack.push(Value{ closure });
 
         for (int i = 0; i < closure->getFunction()->getUpvalueCount(); i++) {
@@ -325,7 +338,7 @@ InterpretResult VM::run() {
       }
 
       case OP_CLASS: {
-        ClassObject* classObject = new ClassObject{ readString(frame) }; // Q: how to avoid memory leaks?
+        auto classObject{ std::make_shared<ClassObject>(readString(frame)) };
         stack.push(Value{ classObject });
         break;
       }
@@ -337,16 +350,19 @@ InterpretResult VM::run() {
           return INTERPRET_RUNTIME_ERROR;
         }
 
-        ClassObject* subclass = AS_CLASS(stack.peek(0).asObject());
-        ClassObject* superclassAsClass = AS_CLASS(superclass.asObject());
-        std::unordered_map<std::string, Value>* superclassMethods = superclassAsClass->getMethods();
-        subclass->getMethods()->insert(superclassMethods->begin(), superclassMethods->end());
+        //ClassObject* subclass = AS_CLASS(stack.peek(0).asObject());
+        //ClassObject* superclassAsClass = AS_CLASS(superclass.asObject());
+
+        auto subclassPointer = std::static_pointer_cast<ClassObject>(stack.peek(0).asObject());
+        auto superclassPointer = std::static_pointer_cast<ClassObject>(superclass.asObject());
+        std::unordered_map<std::string, Value>* superclassMethods = superclassPointer->getMethods();
+        subclassPointer->getMethods()->insert(superclassMethods->begin(), superclassMethods->end());
         stack.pop(); // Subclass.
         break;
       }
 
       case OP_METHOD: {
-        defineMethod(readString(frame));
+        defineMethod(readString(frame).get());
         break;
       }
     }
@@ -377,32 +393,32 @@ Value VM::readConstant(CallFrame* frame) {
   //return chunk.getConstants().at(readByte());
 }
 
-StringObject* VM::readString(CallFrame* frame) {
+std::shared_ptr<StringObject> VM::readString(CallFrame* frame) {
   return readConstant(frame).asString();
 }
 
 void VM::add() {
   double b = stack.pop().asNumber();
   double a = stack.pop().asNumber();
-  stack.push(Value{ VAL_NUMBER, a + b });
+  stack.push(Value{ Value::ValueType::VAL_NUMBER, a + b });
 }
 
 void VM::subtract() {
   double b = stack.pop().asNumber();
   double a = stack.pop().asNumber();
-  stack.push(Value{ VAL_NUMBER, a - b });
+  stack.push(Value{ Value::ValueType::VAL_NUMBER, a - b });
 }
 
 void VM::divide() {
   double b = stack.pop().asNumber();
   double a = stack.pop().asNumber();
-  stack.push(Value{ VAL_NUMBER, a / b });
+  stack.push(Value{ Value::ValueType::VAL_NUMBER, a / b });
 }
 
 void VM::multiply() {
   double b = stack.pop().asNumber();
   double a = stack.pop().asNumber();
-  stack.push(Value{ VAL_NUMBER, a * b });
+  stack.push(Value{ Value::ValueType::VAL_NUMBER, a * b });
 }
 
 void VM::greaterThan() {
@@ -426,10 +442,10 @@ void VM::runtimeError(const char* format, ...) {
 
   for (int i = callFrameCount - 1; i >= 0; i--) {
     CallFrame* frame = &(callFrames[i]);
-    FunctionObject* function = frame->closure->getFunction();
+    FunctionObject* function = frame->closure->getFunction(); // TODO: (prob not?) maybe fix this since getFunction() will return smart ptr
     int instruction = frame->functionProgramCounter - 1;
     std::cerr << "[line " << function->getChunk()->getLine(instruction) << "] in ";
-    if (function->getName() == NULL) { // Q: could this be == nullptr?
+    if (function->getName() == nullptr) {
       std::cerr << "script\n";
     } else {
       std::cerr << function->getName()->getChars() << '\n';
@@ -443,7 +459,10 @@ void VM::runtimeError(const char* format, ...) {
 
 void VM::defineMethod(StringObject* name) {
   Value method = stack.peek(0);
-  ClassObject* klass = AS_CLASS(stack.peek(1).asObject());
+
+  //ClassObject* klass = AS_CLASS(stack.peek(1).asObject());
+
+  auto klass = std::static_pointer_cast<ClassObject>(stack.peek(1).asObject());
   klass->setMethod(name->getChars(), method);
   stack.pop();
 }
@@ -459,7 +478,12 @@ bool VM::bindMethod(ClassObject* klass, StringObject* name) {
   method = klass->getMethod(name->getChars());
 
   // Q: avoid memory leaks?
-  BoundMethodObject* bound = new BoundMethodObject(stack.peek(0), AS_CLOSURE(method.asObject()));
+  // TODO: create a shared_ptr. I think it should be okay to pass in a shared_ptr
+  // created from a closure object that was created by doing: AS_CLOSURE(method.asObject()
+  //BoundMethodObject* bound = new BoundMethodObject(stack.peek(0), AS_CLOSURE(method.asObject()));
+
+  auto closure = std::static_pointer_cast<ClosureObject>(method.asObject());
+  auto bound{ std::make_shared<BoundMethodObject>(stack.peek(0), closure) };
   stack.pop();
   stack.push(Value{ bound });
   return true;
@@ -473,13 +497,16 @@ bool VM::invoke(StringObject* name, int argCount) {
     return false;
   }
 
-  InstanceObject* instance = AS_INSTANCE(receiver.asObject());
+  //InstanceObject* instance = AS_INSTANCE(receiver.asObject());
+  auto instance = std::static_pointer_cast<InstanceObject>(receiver.asObject());
 
   Value value;
 
   if (instance->hasField(name->getChars())) {
     value = instance->getField(name->getChars());
     Value* valueToSet = stack.getTop() - argCount - 1;
+    // Q: is this a problem? Will memory be leaked when I change the contents that valueToSet represents
+    // (particularly since a Value object contains a shared_ptr)?
     *valueToSet = value;
     return callValue(value, argCount);
   }
@@ -497,18 +524,22 @@ bool VM::invokeFromClass(ClassObject* klass, StringObject* name, int argCount) {
     return false;
   }
 
-  return call(AS_CLOSURE(method.asObject()), argCount);
+  auto closure = std::static_pointer_cast<ClosureObject>(method.asObject());
+  //return call(AS_CLOSURE(method.asObject()), argCount);
+  return call(closure.get(), argCount);
 }
 
 bool VM::valuesEqual(Value a, Value b) {
   if (a.getType() != b.getType()) return false;
 
   switch (a.getType()) {
-    case VAL_BOOL:   return a.asBool() == b.asBool();
-    case VAL_NULL:   return true;
-    case VAL_NUMBER: return a.asNumber() == b.asNumber();
-    case VAL_OBJECT: {
-      return a.asObject() == b.asObject();
+    case Value::ValueType::VAL_BOOL:   return a.asBool() == b.asBool();
+    case Value::ValueType::VAL_NULL:   return true;
+    case Value::ValueType::VAL_NUMBER: return a.asNumber() == b.asNumber();
+    case Value::ValueType::VAL_OBJECT: {
+      // Q: can I do this? Depends on how asObject is implemented/should be implemented
+      // Q: is .get() necessary?
+      return a.asObject().get() == b.asObject().get();
     }
     default:
       return false;
@@ -519,15 +550,23 @@ bool VM::callValue(Value callee, int argCount) {
   if (callee.isObject()) {
     switch (callee.getObjectType()) {
       case OBJECT_BOUND_METHOD: {
-        BoundMethodObject* bound = AS_BOUND_METHOD(callee.asObject());
+        //BoundMethodObject* bound = AS_BOUND_METHOD(callee.asObject());
+        auto bound = std::static_pointer_cast<BoundMethodObject>(callee.asObject());
         Value* valueToSet = stack.getTop() - argCount - 1;
+        // Q: is memory leaked here? The original contents of the Value object might have
+        // included a shared_ptr
         *valueToSet = bound->getReceiver();
-        return call(bound->getMethod(), argCount);
+        return call(bound->getMethod().get(), argCount);
       }
 
       case OBJECT_CLASS: {
-        ClassObject* klass = AS_CLASS(callee.asObject());
-        InstanceObject* instance = new InstanceObject{ klass };
+        //ClassObject* klass = AS_CLASS(callee.asObject());
+        auto klass = std::static_pointer_cast<ClassObject>(callee.asObject());
+
+        // TODO: use a smart ptr, but be careful to create it from
+        // another smart ptr instead of a raw resource
+        //InstanceObject* instance = new InstanceObject{ klass };
+        auto instance{ std::make_shared<InstanceObject>(klass) };
         Value value = Value{ instance };
         Value* valueToSet = stack.getTop() - argCount - 1;
         *valueToSet = value;
@@ -536,7 +575,8 @@ bool VM::callValue(Value callee, int argCount) {
 
         if (klass->findMethod(initString->getChars())) {
           initializer = klass->getMethod(initString->getChars());
-          return call(AS_CLOSURE(initializer.asObject()), argCount);
+          auto initializerClosure = std::static_pointer_cast<ClosureObject>(initializer.asObject());
+          return call(initializerClosure.get(), argCount);
         } else if (argCount != 0) {
           runtimeError("Expected 0 arguments but got %d.", argCount);
           return false;
@@ -546,17 +586,8 @@ bool VM::callValue(Value callee, int argCount) {
       }
 
       case OBJECT_CLOSURE: {
-        Object* calleeAsObject = callee.asObject();
-        return call(AS_CLOSURE(calleeAsObject), argCount);
-      }
-
-      case OBJECT_NATIVE: {
-        Object* calleeAsObject = callee.asObject();
-        Value (*native)(int argCount, Value* args) = AS_NATIVE(calleeAsObject);
-        Value result = native(argCount, stack.getTop() - argCount);
-        stack.setTop(stack.getTop() - argCount + 1);
-        stack.push(result);
-        return true;
+        auto calleeClosure = std::static_pointer_cast<ClosureObject>(callee.asObject());
+        return call(calleeClosure.get(), argCount);
       }
 
       default:
@@ -582,29 +613,33 @@ bool VM::call(ClosureObject* closure, int argCount) {
   }
 
   CallFrame* frame = &(callFrames[callFrameCount++]);
-  frame->closure = closure;
+  frame->closure = closure; // TODO: hmm. It might be good for frame to own this as a smart ptr
   frame->functionProgramCounter = 0;
 
   frame->slots = stack.getTop() - argCount - 1;
   return true;
 }
 
-UpvalueObject* VM::captureUpvalue(Value* local) {
-  UpvalueObject* previousUpvalue = nullptr;
-  UpvalueObject* upvalue = openUpvalues;
+//UpvalueObject* VM::captureUpvalue(Value* local) {
+std::shared_ptr<UpvalueObject> VM::captureUpvalue(Value* local) {
+  //UpvalueObject* previousUpvalue = nullptr;
+  std::shared_ptr<UpvalueObject> previousUpvalue;
+  auto upvalue = openUpvalues;
 
-  while (upvalue != NULL && upvalue->getLocation() > local) {
+  // Q: is .get() necessary?
+  while (upvalue.get() != nullptr && upvalue->getLocation() > local) {
     previousUpvalue = upvalue;
     upvalue = upvalue->getNext();
   }
 
-  if (upvalue != NULL && upvalue->getLocation() == local) return upvalue;
+  if (upvalue.get() != nullptr && upvalue->getLocation() == local) return upvalue;
 
-  UpvalueObject* createdUpvalue = new UpvalueObject{ local }; // Q: how to avoid memory leaks?
+  //UpvalueObject* createdUpvalue = new UpvalueObject{ local }; // Q: how to avoid memory leaks?
+  auto createdUpvalue{ std::make_shared<UpvalueObject>( local ) };
 
   createdUpvalue->setNext(upvalue);
 
-  if (previousUpvalue == NULL) {
+  if (previousUpvalue.get() == nullptr) {
     openUpvalues = createdUpvalue;
   } else {
     previousUpvalue->setNext(createdUpvalue);
@@ -614,9 +649,10 @@ UpvalueObject* VM::captureUpvalue(Value* local) {
 }
 
 void VM::closeUpvalues(Value* last) {
-  while (openUpvalues != NULL &&
+  while (openUpvalues.get() != nullptr && // Q: is .get() necessary?
          openUpvalues->getLocation() >= last) {
-    UpvalueObject* upvalue = openUpvalues;
+    //UpvalueObject* upvalue = openUpvalues;
+    auto upvalue = openUpvalues;
     upvalue->setClosed(*(upvalue->getLocation()));
     upvalue->setLocation(upvalue->getClosed());
     openUpvalues = upvalue->getNext();

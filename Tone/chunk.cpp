@@ -2,10 +2,12 @@
 #include "functionobject.h"
 
 #include <iostream>
+#include <memory>
 
 // Q: is there a better way of doing this than a macro?
 // Also note that this is duplicated in vm.cpp
-#define AS_FUNCTION(object)  ((FunctionObject*)(object))
+// TODO: prob remove this
+//#define AS_FUNCTION(object)  ((FunctionObject*)(object))
 
 void Chunk::appendByte(uint8_t byte, int line) {
   bytecode.push_back(byte);
@@ -105,7 +107,8 @@ int Chunk::disassembleInstruction(int offset) {
       printf("%-16s %4d ", "OP_CLOSURE", constant);
       std::cout << "<fn " << constants.at(constant) << ">\n";
 
-      FunctionObject* function = AS_FUNCTION(constants.at(constant).asObject());
+      //FunctionObject* function = AS_FUNCTION(constants.at(constant).asObject());
+      auto function = std::static_pointer_cast<FunctionObject>(constants.at(constant).asObject());
       for (int j = 0; j < function->getUpvalueCount(); j++) {
         int isLocal = bytecode.at(offset++);
         int index = bytecode.at(offset++);
@@ -136,7 +139,7 @@ int Chunk::disassembleSimpleInstruction(const std::string& name, int offset) {
   return offset + 1;
 }
 
-int Chunk::addConstant(Value value) {
+int Chunk::addConstant(Value value) { // TODO: pass by const reference? Note that value has a shared_ptr
   constants.push_back(value);
   return (int)(constants.size() - 1);
 }

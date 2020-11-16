@@ -8,7 +8,7 @@
 class Stack {
   static const int max{ 64 * 256 }; // Todo: clean this up by removing hardcoded values
   std::array<Value, max> arr;
-  Value* top;
+  Value* top{ nullptr };
 
 public:
   Stack();

@@ -1,4 +1,5 @@
 #include "compiler.h"
+#include "value.h"
 
 #include <iostream>
 #include <limits>
@@ -84,7 +85,10 @@ void Compiler::function(FunctionType type) {
 
   auto upvalues = currentEnvironment->releaseUpvalues();
   FunctionObject* function = endCompiler();
-  emitBytes(OP_CLOSURE, makeConstant(Value{ function }));
+  //emitBytes(OP_CLOSURE, makeConstant(Value{ function })); // TODO: remove if working with shared_ptr
+  // Q: is it a problem to pass ownership of `function` to a shared_ptr if function was 'part of' a
+  // currentEnvironment which was itself wrapped in a unique_ptr?
+  emitBytes(OP_CLOSURE, makeConstant(Value{ std::shared_ptr<FunctionObject>(function) }));
   for (const auto &upvalue : upvalues) {
     emitByte(upvalue.isLocal ? 1 : 0);
     emitByte(upvalue.index);
@@ -321,7 +325,7 @@ void Compiler::emitLoop(int loopStart) {
   emitByte(OP_LOOP);
 
   int offset = currentChunk()->getBytecodeCount() - loopStart + 2;
-  if (offset > std::numeric_limits<uint16_t>::max()) {
+  if (offset > std::numeric_limits<uint16_t>::max()) { // TODO: consider putting limits constant in constants header file
     reporter.error(previous, "Loop body too large.");
   }
 
@@ -339,7 +343,7 @@ int Compiler::emitJump(uint8_t instruction) {
 void Compiler::patchJump(int offset) {
   int jump = currentChunk()->getBytecodeCount() - offset - 2;
 
-  if (jump > std::numeric_limits<uint16_t>::max()) {
+  if (jump > std::numeric_limits<uint16_t>::max()) {  // TODO: consider putting limits constant in constants header file
     reporter.error(previous, "Too much code to jump over.");
   }
 
@@ -559,7 +563,7 @@ void Compiler::number() {
   // According to this thread, it depends on the locale:
   // https://stackoverflow.com/questions/1012571/stdstring-to-float-or-double
   double value = std::stod(previous.lexeme);
-  emitConstant(Value{ VAL_NUMBER, value });
+  emitConstant(Value{ Value::ValueType::VAL_NUMBER, value });
 
 }
 
@@ -693,8 +697,9 @@ void Compiler::namedVariable(Token name, bool canAssign) {
   }
 }
 
-// TODO: pass by const reference. This needs to be done in several places...
-StringObject* Compiler::copyString(Token* name) {
+// TODO: decide whether to return StringObject* or std::unique_ptr/std::shared_ptr
+// TODO: pass Token by const reference. This needs to be done in several places...
+std::shared_ptr<StringObject> Compiler::copyString(Token* name) {
   // Q: how can I make sure that stringObject gets deleted and memory gets freed at the right time?
 
   std::unordered_map<std::string, Value>::iterator it = strings->find(name->lexeme);
@@ -702,8 +707,8 @@ StringObject* Compiler::copyString(Token* name) {
 //    StringObject* stringObject = new StringObject(name->lexeme);
 //    strings->insert(std::make_pair(name->lexeme, Value{ stringObject }));
 
-    auto stringObject{ std::make_unique<StringObject>(name->lexeme) };
-    Value value{ std::move(stringObject) };
+    auto stringObject{ std::make_shared<StringObject>(name->lexeme) };
+    Value value{ stringObject };
     strings->insert(std::make_pair(name->lexeme,
                                    value));
 
@@ -718,7 +723,7 @@ void Compiler::emitConstant(Value value) {
   emitBytes(OP_CONSTANT, makeConstant(value));
 }
 
-uint8_t Compiler::makeConstant(Value value) {
+uint8_t Compiler::makeConstant(Value value) { // TODO: pass by const reference? Note that value has a shared_ptr
   int constant = currentChunk()->addConstant(value);
   if ((unsigned)constant > UINT8_MAX) {
     reporter.error(previous, "Too many constants in one chunk.");

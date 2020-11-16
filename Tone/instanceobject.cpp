@@ -1,9 +1,11 @@
 #include "instanceobject.h"
 
-InstanceObject::InstanceObject() : Object{ OBJECT_INSTANCE }, klass{ nullptr } {}
+#include <utility>
 
-InstanceObject::InstanceObject(ClassObject* klass) : Object{ OBJECT_INSTANCE } {
-  this->klass = klass;
+InstanceObject::InstanceObject() : Object{ OBJECT_INSTANCE } {}
+
+InstanceObject::InstanceObject(std::shared_ptr<ClassObject> klass) : Object{ OBJECT_INSTANCE } {
+  this->klass = std::move(klass);
 }
 
 bool InstanceObject::hasField(const std::string &name) {
@@ -25,5 +27,5 @@ void InstanceObject::setField(const std::string &name, Value value) {
 }
 
 ClassObject* InstanceObject::getKlass() {
-  return klass;
+  return klass.get();
 }

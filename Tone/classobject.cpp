@@ -1,9 +1,9 @@
 #include "classobject.h"
 
-ClassObject::ClassObject() : Object{ OBJECT_CLASS }, name{ nullptr } {}
+ClassObject::ClassObject() : Object{ OBJECT_CLASS } {}
 
-ClassObject::ClassObject(StringObject* name) : Object{ OBJECT_CLASS } {
-  this->name = name;
+ClassObject::ClassObject(std::shared_ptr<StringObject> name) : Object{ OBJECT_CLASS } {
+  this->name = name; // Q: should this be done using copy initialisation in the first line of the ctor?
 }
 
 Value ClassObject::getMethod(const std::string &name) {
@@ -24,7 +24,7 @@ void ClassObject::setMethod(const std::string &name, Value method) {
   methods[name] = method;
 }
 
-StringObject* ClassObject::getName() {
+std::shared_ptr<StringObject> ClassObject::getName() {
   return name;
 }
 

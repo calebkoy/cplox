@@ -10,9 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
-// TODO: Make a note that you ideally should implement a copy constructor
-// since you have members that are pointers.
-
+// TODO: make this an enum class
 // TODO: consider moving this into the Compiler class declaration
 enum Precedence {
   PRECEDENCE_NONE,
@@ -35,6 +33,7 @@ struct ClassEnvironment {
   bool hasSuperclass;
 };
 
+// TODO: consider adding copy ctor and copy assignment op
 class Compiler {
   std::vector<Token> tokens;
   std::unordered_map<std::string, Value> *strings;
@@ -107,11 +106,11 @@ class Compiler {
   void functionDeclaration();
   void function(FunctionType type);
   void variable(bool canAssign);
-  void namedVariable(Token name, bool canAssign);
+  void namedVariable(Token name, bool canAssign); // TODO: pass Token by const ref
   void varDeclaration();
   void classDeclaration();
   uint8_t parseVariable(const std::string &errorMessage);
-  uint8_t identifierConstant(Token* name);
+  uint8_t identifierConstant(Token* name); // TODO: pass Token by const ref?
   void declareVariable();
   void defineVariable(uint8_t global);
   Token syntheticToken(const std::string &text);
@@ -133,16 +132,18 @@ class Compiler {
   void synchronise();
   bool match(TokenType type);
   bool check(TokenType type);
+  // TODO: pass Tokens by const ref?
   bool identifiersEqual(Token* a, Token* b); // TODO: consider extracting this; it's also used in Environment
   void string();
-  StringObject* copyString(Token* name);
+  //StringObject* copyString(Token* name); // TODO: remove if everything works using version that returns smart ptr
+  std::shared_ptr<StringObject> copyString(Token* name); // TODO: pass Token by const ref?
   void invokePrefixRule(bool canAssign);
   void invokeInfixRule(bool canAssign);
   void parsePrecedence(Precedence precedence);
   void emitByte(uint8_t byte);
   void emitBytes(uint8_t byte1, uint8_t byte2);
-  void emitConstant(Value value);
-  uint8_t makeConstant(Value value);
+  void emitConstant(Value value); // TODO: pass Value by const ref? It has a shared_ptr
+  uint8_t makeConstant(Value value); // TODO: pass Value by const ref? It has a shared_ptr
   void emitReturn();
   FunctionObject* endCompiler();
 
@@ -152,7 +153,7 @@ public:
   FunctionObject* compile();
   void reset();
 
-  void setTokens(const std::vector<Token> &tokens);
+  void setTokens(const std::vector<Token> &tokens); // TODO: make position of '&' and '*' consistent in the project
 };
 
 #endif // COMPILER_H

@@ -5,7 +5,8 @@
 #include "stringobject.h"
 
 #include <iostream>
-#include <memory> // TODO: remove if not using std::unique_ptr
+#include <memory> // TODO: remove if not using std::unique_ptr or std::shared_ptr
+//#include <variant> // for std::variant TODO: remove if not using std::variant
 
 //enum class ValueType {
 //  VAL_BOOL,
@@ -25,9 +26,9 @@ class Value {
     bool boolean;
     double number;
     //TODO: consider using: std::unique_ptr<Object> object;
-    std::unique_ptr<Object> object;
+    std::shared_ptr<Object> object;
     //Object* object;
-  } as; // Q: should you use 'as' here? Does it have any real benefit? What would it be like w/o it?
+  }; //as; // Q: should you use 'as' here? Does it have any real benefit? What would it be like w/o it?
 
 public:
   enum class ValueType {
@@ -38,18 +39,30 @@ public:
     VAL_NONE
   } type = ValueType::VAL_NONE;
 
+  //std::variant<bool, double, std::shared_ptr<Object>> variant;
+
   Value();
   Value(bool boolean);
-  Value(std::unique_ptr<Object> object);
+  Value(std::shared_ptr<Object> object);
   //Value(Object* object); // TODO: get rid of this if the program works with a smart pointer
-  Value(ValueType type, double number);
+  Value(ValueType type, double number = 0);
 
-  ~Value();
+  // See https://www.learncpp.com/cpp-tutorial/15-3-move-constructors-and-move-assignment/
+  Value(const Value& value); // Explicitly define copy constructor
+  Value& operator=(const Value& value); // Explicitly define copy assignment operator
+
+  //Value(Value&& value) noexcept; // Move constructor
+  //Value& operator=(Value&& value) noexcept;
+
+  ~Value(); // Q: is this needed if using std::variant?
 
   bool asBool() const;
   double asNumber() const;
-  Object* asObject() const;
-  StringObject* asString() const;
+  //Object* asObject() const;
+  std::shared_ptr<Object> asObject() const;
+  std::shared_ptr<StringObject> asString() const;
+  // TODO: prob remove; is causing errors due to circular references
+  //std::shared_ptr<FunctionObject> asFunction() const;
 
   bool isBool();
   bool isNull();
@@ -58,7 +71,6 @@ public:
   bool isString() const;
   bool isFunction() const;
   bool isClosure()const;
-  bool isNative() const;
   bool isUpvalue() const;
   bool isClass() const;
   bool isBoundMethod() const;
@@ -91,8 +103,6 @@ public:
         } else if (value.isFunction()) {
           //out << *(value.asFunction());
           out << value.getFunctionName();
-        } else if (value.isNative()) {
-          out << "<native fn>";
         } else if (value.isClosure()) {
           out << value.getClosureFunctionName();
         } else if (value.isUpvalue()) {
