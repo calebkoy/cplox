@@ -49,14 +49,14 @@ public:
   bool isBoundMethod() const;
   bool isInstance() const;
   bool isFalsey();
-  ObjectType getObjectType();
+  ObjectType getObjectType() const;
   std::string getFunctionName() const;
   std::string getClosureFunctionName() const;
   std::string getInstanceClassName() const;
   std::string getClassName() const;
   std::string getBoundMethodName() const;
 
-  ValueType getType();
+  ValueType getType() const;
 
   friend std::ostream& operator<<(std::ostream& out, const Value &value) {
     switch (value.type) {

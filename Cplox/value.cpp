@@ -185,11 +185,11 @@ bool Value::isFalsey() {
   return isNull() || (isBool() && !asBool());
 }
 
-Value::ValueType Value::getType() {
+Value::ValueType Value::getType() const {
   return type;
 }
 
-ObjectType Value::getObjectType() {
+ObjectType Value::getObjectType() const {
   if (!isObject()) throw "Value is not object type";
   return object->getType();
 }

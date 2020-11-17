@@ -16,7 +16,7 @@ private:
   VM vm;
   std::unordered_map<std::string, Value> strings;
 
-  InterpretResult interpret(const std::string &source);
+  InterpreterResult interpret(const std::string &source);
 
 public:
   Cplox();

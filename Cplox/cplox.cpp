@@ -46,12 +46,12 @@ void Cplox::runFile(const char *path) {
     read += amount;
   } while(size != read);
 
-  InterpretResult result = interpret(source);
-  if (result == INTERPRET_COMPILATION_ERROR) exit(65);
-  if (result == INTERPRET_RUNTIME_ERROR) exit(70);
+  InterpreterResult result = interpret(source);
+  if (result == InterpreterResult::COMPILATION_ERROR) exit(65);
+  if (result == InterpreterResult::RUNTIME_ERROR) exit(70);
 }
 
-InterpretResult Cplox::interpret(const std::string &source) {
+InterpreterResult Cplox::interpret(const std::string &source) {
   scanner.reset();
   scanner.setSource(source);
   std::vector<Token> tokens = scanner.scanTokens();
@@ -59,7 +59,7 @@ InterpretResult Cplox::interpret(const std::string &source) {
   compiler.reset();
   compiler.setTokens(tokens);
   auto function = compiler.compile();
-  if (function == nullptr) return INTERPRET_COMPILATION_ERROR;
+  if (function == nullptr) return InterpreterResult::COMPILATION_ERROR;
 
   auto closure{ std::make_shared<ClosureObject>(function) };
   vm.pushOntoStack(Value{ closure });

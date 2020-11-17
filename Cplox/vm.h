@@ -2,48 +2,38 @@
 #define VM_H
 
 #include "chunk.h"
+#include "classobject.h"
+#include "closureobject.h"
+#include "constants.h"
 #include "stack.h"
 #include "value.h"
-#include "closureobject.h"
-#include "classobject.h"
 
-#include <memory> // for std::shared_ptr TODO: remove if not using
+#include <memory>
 #include <unordered_map>
 
-// TODO: make class enum
-enum InterpretResult {
-  INTERPRET_OK,
-  INTERPRET_COMPILATION_ERROR,
-  INTERPRET_RUNTIME_ERROR
+enum class InterpreterResult {
+  OK,
+  COMPILATION_ERROR,
+  RUNTIME_ERROR
 };
 
 struct CallFrame {
-  // TODO: it might be good to make this a smart ptr (shared), but be careful not to create it
-  // by passing in a pointer which is already owned by another smart ptr.
-  // See https://www.learncpp.com/cpp-tutorial/15-6-stdshared_ptr/
   ClosureObject* closure;
   int functionProgramCounter;
-  Value* slots; // Q: would it be better to use std::array or sth other than pointers?
+  Value* slots;
 };
 
 class VM {
-  static const int callFramesMax = 64;
-  CallFrame callFrames[callFramesMax];
-  int callFrameCount;
+  CallFrame callFrames[constants::callFramesMax];
+  int callFrameCount{ 0 };
   Stack stack;
-
-  // Q: should this be initialised in a/the constructor?
-  // Q: should the first template type be std::string?
-  std::unordered_map<std::string, Value> globals; // Q: should this be a pointer?
-  //UpvalueObject* openUpvalues;
+  std::unordered_map<std::string, Value> globals;
   std::shared_ptr<UpvalueObject> openUpvalues;
-  //StringObject* initString;
   std::unique_ptr<StringObject> initString;
 
-  uint8_t readByte(CallFrame* frame); // TODO: consider passing this and all other functions that take ptr by const ref
+  uint8_t readByte(CallFrame* frame);
   uint16_t readShort(CallFrame* frame);
   Value readConstant(CallFrame* frame);
-  //StringObject* readString(CallFrame* frame);
   std::shared_ptr<StringObject> readString(CallFrame* frame);
   void add();
   void subtract();
@@ -51,17 +41,11 @@ class VM {
   void multiply();
   void greaterThan();
   void lessThan();
-
   void runtimeError(const char* format, ...);
-
-  // todo: put this in the class that should own it (maybe in Value, by overriding
-  // ==)
-  bool valuesEqual(Value a, Value b); // TODO: consider passing by const ref; note that Value has a shared_ptr
-
-  bool callValue(Value callee, int argCount); // TODO: consider passing by const ref; note that Value has a shared_ptr
-  //UpvalueObject* captureUpvalue(Value* local); // TODO: consider passing by const ref; note that Value has a shared_ptr
-  std::shared_ptr<UpvalueObject> captureUpvalue(Value* local); // TODO: consider passing by const ref; note that Value has a shared_ptr
-  void closeUpvalues(Value* last); // TODO: consider passing by const ref; note that Value has a shared_ptr
+  bool valuesEqual(const Value &a, const Value &b);
+  bool callValue(const Value &callee, int argCount);
+  std::shared_ptr<UpvalueObject> captureUpvalue(Value* local);
+  void closeUpvalues(Value* last);
   void defineMethod(StringObject* name);
   bool bindMethod(ClassObject* klass, StringObject* name);
   bool invoke(StringObject* name, int argCount);
@@ -71,10 +55,9 @@ class VM {
 public:
   VM();
 
-  InterpretResult interpret();
-  InterpretResult run();
+  InterpreterResult run();
   bool call(ClosureObject* closure, int argCount);
-  void pushOntoStack(const Value &value); // Q: is this fine to be const ref, even though Value contains a shared_ptr?
+  void pushOntoStack(const Value &value);
   Value* getStackTop();
 };
 
