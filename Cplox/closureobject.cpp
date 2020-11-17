@@ -1,7 +1,7 @@
 #include "closureobject.h"
 
 ClosureObject::ClosureObject(std::shared_ptr<FunctionObject> function) :
-  Object{ OBJECT_CLOSURE }, function(std::move(function))
+  Object{ ObjectType::OBJECT_CLOSURE }, function(std::move(function))
 {
 }
 

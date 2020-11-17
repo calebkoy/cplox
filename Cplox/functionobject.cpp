@@ -1,6 +1,6 @@
 #include "functionobject.h"
 
-FunctionObject::FunctionObject() : Object{ OBJECT_FUNCTION } {}
+FunctionObject::FunctionObject() : Object{ ObjectType::OBJECT_FUNCTION } {}
 
 void FunctionObject::incrementArity() {
   arity++;

@@ -3,7 +3,7 @@
 #include <utility>
 
 InstanceObject::InstanceObject(std::shared_ptr<ClassObject> klass) :
-  Object{ OBJECT_INSTANCE }, klass(std::move(klass))
+  Object{ ObjectType::OBJECT_INSTANCE }, klass(std::move(klass))
 {
 }
 

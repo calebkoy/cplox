@@ -545,7 +545,7 @@ bool VM::valuesEqual(Value a, Value b) {
 bool VM::callValue(Value callee, int argCount) {
   if (callee.isObject()) {
     switch (callee.getObjectType()) {
-      case OBJECT_BOUND_METHOD: {
+      case ObjectType::OBJECT_BOUND_METHOD: {
         //BoundMethodObject* bound = AS_BOUND_METHOD(callee.asObject());
         auto bound = std::static_pointer_cast<BoundMethodObject>(callee.asObject());
         Value* valueToSet = stack.getTop() - argCount - 1;
@@ -555,7 +555,7 @@ bool VM::callValue(Value callee, int argCount) {
         return call(bound->getMethod().get(), argCount);
       }
 
-      case OBJECT_CLASS: {
+      case ObjectType::OBJECT_CLASS: {
         //ClassObject* klass = AS_CLASS(callee.asObject());
         auto klass = std::static_pointer_cast<ClassObject>(callee.asObject());
 
@@ -581,7 +581,7 @@ bool VM::callValue(Value callee, int argCount) {
         return true;
       }
 
-      case OBJECT_CLOSURE: {
+      case ObjectType::OBJECT_CLOSURE: {
         auto calleeClosure = std::static_pointer_cast<ClosureObject>(callee.asObject());
         return call(calleeClosure.get(), argCount);
       }

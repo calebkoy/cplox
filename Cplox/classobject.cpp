@@ -1,7 +1,7 @@
 #include "classobject.h"
 
 ClassObject::ClassObject(std::shared_ptr<StringObject> name) :
-  Object{ OBJECT_CLASS }, name(std::move(name))
+  Object{ ObjectType::OBJECT_CLASS }, name(std::move(name))
 {
 }
 

@@ -225,39 +225,39 @@ bool Value::isObject() const {
 bool Value::isString() const {
   // Q: should some/all of this functionality belong to class Object?
   //return isObject() && asObject()->getType() == OBJECT_STRING;
-  return isObject() && object->getType() == OBJECT_STRING;
+  return isObject() && object->getType() == ObjectType::OBJECT_STRING;
 }
 
 // TODO: prob need to change this and all other is***() methods
 // since we're using shared_ptr now
 bool Value::isFunction() const {
   // Q: should some/all of this functionality belong to class Object?
-  return isObject() && object->getType() == OBJECT_FUNCTION;
+  return isObject() && object->getType() == ObjectType::OBJECT_FUNCTION;
 }
 
 bool Value::isUpvalue() const {
   // Q: should some/all of this functionality belong to class Object?
-  return isObject() && object->getType() == OBJECT_UPVALUE;
+  return isObject() && object->getType() == ObjectType::OBJECT_UPVALUE;
 }
 
 bool Value::isClosure() const {
   // Q: should some/all of this functionality belong to class Object?
-  return isObject() && object->getType() == OBJECT_CLOSURE;
+  return isObject() && object->getType() == ObjectType::OBJECT_CLOSURE;
 }
 
 bool Value::isClass() const {
   // Q: should some/all of this functionality belong to class Object?
-  return isObject() && object->getType() == OBJECT_CLASS;
+  return isObject() && object->getType() == ObjectType::OBJECT_CLASS;
 }
 
 bool Value::isInstance() const {
   // Q: should some/all of this functionality belong to class Object?
-  return isObject() && object->getType() == OBJECT_INSTANCE;
+  return isObject() && object->getType() == ObjectType::OBJECT_INSTANCE;
 }
 
 bool Value::isBoundMethod() const {
   // Q: should some/all of this functionality belong to class Object?
-  return isObject() && object->getType() == OBJECT_BOUND_METHOD;
+  return isObject() && object->getType() == ObjectType::OBJECT_BOUND_METHOD;
 }
 
 bool Value::isFalsey() {
