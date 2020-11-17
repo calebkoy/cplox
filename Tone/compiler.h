@@ -10,30 +10,26 @@
 #include <unordered_map>
 #include <vector>
 
-// TODO: make this an enum class
-// TODO: consider moving this into the Compiler class declaration
-enum Precedence {
-  PRECEDENCE_NONE,
-  PRECEDENCE_ASSIGNMENT,
-  PRECEDENCE_OR,
-  PRECEDENCE_AND,
-  PRECEDENCE_EQUALITY,    // == !=
-  PRECEDENCE_COMPARISON,  // < > <= >=
-  PRECEDENCE_TERM,        // + -
-  PRECEDENCE_FACTOR,      // * /
-  PRECEDENCE_UNARY,       // ! -
-  PRECEDENCE_CALL,        // . ()
-  PRECEDENCE_PRIMARY
+enum class Precedence {
+  NONE,
+  ASSIGNMENT,
+  OR,
+  AND,
+  EQUALITY,    // == !=
+  COMPARISON,  // < > <= >=
+  TERM,        // + -
+  FACTOR,      // * /
+  UNARY,       // ! -
+  CALL,        // . ()
+  PRIMARY
 };
 
-// TODO: consider moving this into the Compiler class declaration
 struct ClassEnvironment {
   struct ClassEnvironment* enclosing;
   Token name;
   bool hasSuperclass;
 };
 
-// TODO: consider adding copy ctor and copy assignment op
 class Compiler {
   std::vector<Token> tokens;
   std::unordered_map<std::string, Value> *strings;
@@ -44,46 +40,46 @@ class Compiler {
   ErrorReporter reporter;
   int currentTokenIndex{ 0 };
   std::unordered_map<TokenType, Precedence> tokenPrecedence = {
-    {TOKEN_LEFT_PAREN, PRECEDENCE_CALL},
-    {TOKEN_RIGHT_PAREN, PRECEDENCE_NONE},
-    {TOKEN_LEFT_BRACE, PRECEDENCE_NONE},
-    {TOKEN_RIGHT_BRACE, PRECEDENCE_NONE},
-    {TOKEN_COMMA, PRECEDENCE_NONE},
-    {TOKEN_DOT, PRECEDENCE_CALL},
-    {TOKEN_MINUS, PRECEDENCE_TERM},
-    {TOKEN_PLUS, PRECEDENCE_TERM},
-    {TOKEN_SEMICOLON, PRECEDENCE_NONE},
-    {TOKEN_SLASH, PRECEDENCE_FACTOR},
-    {TOKEN_STAR, PRECEDENCE_FACTOR},
-    {TOKEN_BANG, PRECEDENCE_NONE},
-    {TOKEN_BANG_EQUAL, PRECEDENCE_EQUALITY},
-    {TOKEN_EQUAL, PRECEDENCE_NONE},
-    {TOKEN_EQUAL_EQUAL, PRECEDENCE_EQUALITY},
-    {TOKEN_GREATER, PRECEDENCE_COMPARISON},
-    {TOKEN_GREATER_EQUAL, PRECEDENCE_COMPARISON},
-    {TOKEN_LESS, PRECEDENCE_COMPARISON},
-    {TOKEN_LESS_EQUAL, PRECEDENCE_COMPARISON},
-    {TOKEN_IDENTIFIER, PRECEDENCE_NONE},
-    {TOKEN_STRING, PRECEDENCE_NONE},
-    {TOKEN_NUMBER, PRECEDENCE_NONE},
-    {TOKEN_AND, PRECEDENCE_AND},
-    {TOKEN_CLASS, PRECEDENCE_NONE},
-    {TOKEN_ELSE, PRECEDENCE_NONE},
-    {TOKEN_FALSE, PRECEDENCE_NONE},
-    {TOKEN_FOR, PRECEDENCE_NONE},
-    {TOKEN_FUNCTION, PRECEDENCE_NONE},
-    {TOKEN_IF, PRECEDENCE_NONE},
-    {TOKEN_NULL, PRECEDENCE_NONE},
-    {TOKEN_OR, PRECEDENCE_OR},
-    {TOKEN_PRINT, PRECEDENCE_NONE},
-    {TOKEN_RETURN, PRECEDENCE_NONE},
-    {TOKEN_SUPER, PRECEDENCE_NONE},
-    {TOKEN_THIS, PRECEDENCE_NONE},
-    {TOKEN_TRUE, PRECEDENCE_NONE},
-    {TOKEN_VAR, PRECEDENCE_NONE},
-    {TOKEN_WHILE, PRECEDENCE_NONE},
-    {TOKEN_ERROR, PRECEDENCE_NONE},
-    {TOKEN_EOF, PRECEDENCE_NONE}
+    {TOKEN_LEFT_PAREN, Precedence::CALL},
+    {TOKEN_RIGHT_PAREN, Precedence::NONE},
+    {TOKEN_LEFT_BRACE, Precedence::NONE},
+    {TOKEN_RIGHT_BRACE, Precedence::NONE},
+    {TOKEN_COMMA, Precedence::NONE},
+    {TOKEN_DOT, Precedence::CALL},
+    {TOKEN_MINUS, Precedence::TERM},
+    {TOKEN_PLUS, Precedence::TERM},
+    {TOKEN_SEMICOLON, Precedence::NONE},
+    {TOKEN_SLASH, Precedence::FACTOR},
+    {TOKEN_STAR, Precedence::FACTOR},
+    {TOKEN_BANG, Precedence::NONE},
+    {TOKEN_BANG_EQUAL, Precedence::EQUALITY},
+    {TOKEN_EQUAL, Precedence::NONE},
+    {TOKEN_EQUAL_EQUAL, Precedence::EQUALITY},
+    {TOKEN_GREATER, Precedence::COMPARISON},
+    {TOKEN_GREATER_EQUAL, Precedence::COMPARISON},
+    {TOKEN_LESS, Precedence::COMPARISON},
+    {TOKEN_LESS_EQUAL, Precedence::COMPARISON},
+    {TOKEN_IDENTIFIER, Precedence::NONE},
+    {TOKEN_STRING, Precedence::NONE},
+    {TOKEN_NUMBER, Precedence::NONE},
+    {TOKEN_AND, Precedence::AND},
+    {TOKEN_CLASS, Precedence::NONE},
+    {TOKEN_ELSE, Precedence::NONE},
+    {TOKEN_FALSE, Precedence::NONE},
+    {TOKEN_FOR, Precedence::NONE},
+    {TOKEN_FUNCTION, Precedence::NONE},
+    {TOKEN_IF, Precedence::NONE},
+    {TOKEN_NULL, Precedence::NONE},
+    {TOKEN_OR, Precedence::OR},
+    {TOKEN_PRINT, Precedence::NONE},
+    {TOKEN_RETURN, Precedence::NONE},
+    {TOKEN_SUPER, Precedence::NONE},
+    {TOKEN_THIS, Precedence::NONE},
+    {TOKEN_TRUE, Precedence::NONE},
+    {TOKEN_VAR, Precedence::NONE},
+    {TOKEN_WHILE, Precedence::NONE},
+    {TOKEN_ERROR, Precedence::NONE},
+    {TOKEN_EOF, Precedence::NONE}
   };
 
   void advance();
@@ -106,11 +102,11 @@ class Compiler {
   void functionDeclaration();
   void function(FunctionType type);
   void variable(bool canAssign);
-  void namedVariable(Token name, bool canAssign); // TODO: pass Token by const ref
+  void namedVariable(const Token &name, bool canAssign);
   void varDeclaration();
   void classDeclaration();
   uint8_t parseVariable(const std::string &errorMessage);
-  uint8_t identifierConstant(Token* name); // TODO: pass Token by const ref?
+  uint8_t identifierConstant(const Token &name);
   void declareVariable();
   void defineVariable(uint8_t global);
   Token syntheticToken(const std::string &text);
@@ -132,18 +128,16 @@ class Compiler {
   void synchronise();
   bool match(TokenType type);
   bool check(TokenType type);
-  // TODO: pass Tokens by const ref?
-  bool identifiersEqual(Token* a, Token* b); // TODO: consider extracting this; it's also used in Environment
+  bool identifiersEqual(const Token &a, const Token &b);
   void string();
-  //StringObject* copyString(Token* name); // TODO: remove if everything works using version that returns smart ptr
-  std::shared_ptr<StringObject> copyString(Token* name); // TODO: pass Token by const ref?
+  std::shared_ptr<StringObject> copyString(const Token &name);
   void invokePrefixRule(bool canAssign);
   void invokeInfixRule(bool canAssign);
   void parsePrecedence(Precedence precedence);
   void emitByte(uint8_t byte);
   void emitBytes(uint8_t byte1, uint8_t byte2);
-  void emitConstant(Value value); // TODO: pass Value by const ref? It has a shared_ptr
-  uint8_t makeConstant(Value value); // TODO: pass Value by const ref? It has a shared_ptr
+  void emitConstant(const Value &value);
+  uint8_t makeConstant(const Value &value);
   void emitReturn();
   FunctionObject* endCompiler();
 
@@ -153,7 +147,7 @@ public:
   FunctionObject* compile();
   void reset();
 
-  void setTokens(const std::vector<Token> &tokens); // TODO: make position of '&' and '*' consistent in the project
+  void setTokens(const std::vector<Token> &tokens);
 };
 
 #endif // COMPILER_H

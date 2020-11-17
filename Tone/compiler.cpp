@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <utility>
 
 //#define DEBUG_PRINT_CODE
@@ -26,7 +27,6 @@ FunctionObject* Compiler::compile() {
 
 void Compiler::advance() {
   previous = current;
-
   for (;;) {
     current = tokens.at(currentTokenIndex++);
     if (current.type != TOKEN_ERROR) break;
@@ -62,11 +62,10 @@ void Compiler::function(FunctionType type) {
                                                      reporter);
 
   if (type != TYPE_SCRIPT) {
-    currentEnvironment->getFunction()->setName(copyString(&previous));
+    currentEnvironment->getFunction()->setName(copyString(previous));
   }
 
   beginScope();
-
   consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
   if (!check(TOKEN_RIGHT_PAREN)) {
     do {
@@ -80,17 +79,13 @@ void Compiler::function(FunctionType type) {
     } while (match(TOKEN_COMMA));
   }
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
-
   consume(TOKEN_LEFT_BRACE, "Expect '{' before function body.");
   block();
-
   auto upvalues = currentEnvironment->releaseUpvalues();
   FunctionObject* function = endCompiler();
-  //emitBytes(OP_CLOSURE, makeConstant(Value{ function })); // TODO: remove if working with shared_ptr
-  // Q: is it a problem to pass ownership of `function` to a shared_ptr if function was 'part of' a
-  // currentEnvironment which was itself wrapped in a unique_ptr?
   emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_CLOSURE),
             makeConstant(Value{ std::shared_ptr<FunctionObject>(function) }));
+
   for (const auto &upvalue : upvalues) {
     emitByte(upvalue.isLocal ? 1 : 0);
     emitByte(upvalue.index);
@@ -99,25 +94,24 @@ void Compiler::function(FunctionType type) {
 
 void Compiler::varDeclaration() {
   uint8_t global = parseVariable("Expect variable name.");
-
   if (match(TOKEN_EQUAL)) {
     expression();
   } else {
     emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_NULL));
   }
-  consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
 
+  consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
   defineVariable(global);
 }
 
 void Compiler::classDeclaration() {
   consume(TOKEN_IDENTIFIER, "Expect class name.");
   Token className = previous;
-  uint8_t nameConstant = identifierConstant(&previous);
+  uint8_t nameConstant = identifierConstant(previous);
   declareVariable();
-
   emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_CLASS),
             nameConstant);
+
   defineVariable(nameConstant);
 
   ClassEnvironment classEnvironment;
@@ -125,17 +119,14 @@ void Compiler::classDeclaration() {
   classEnvironment.hasSuperclass = false;
   classEnvironment.enclosing = currentClassEnvironment;
   currentClassEnvironment = &classEnvironment;
-
   if (match(TOKEN_LESS)) {
     consume(TOKEN_IDENTIFIER, "Expect superclass name.");
     variable(false);
-
-    if (identifiersEqual(&className, &previous)) {
+    if (identifiersEqual(className, previous)) {
       reporter.error(previous, "A class cannot inherit from itself.");
     }
 
     beginScope();
-
     if (currentEnvironment->localCountAtMax()) {
       reporter.error(previous, "Too many local variables in function.");
     } else {
@@ -143,24 +134,21 @@ void Compiler::classDeclaration() {
     }
 
     defineVariable(0);
-
     namedVariable(className, false);
     emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_INHERIT));
-
     classEnvironment.hasSuperclass = true;
   }
 
   // Load the class onto the stack before compiling
   // its body, so that its methods can be bound to it.
   namedVariable(className, false);
-
   consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
   while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
     method();
   }
+
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
-
   if (classEnvironment.hasSuperclass) {
     endScope();
   }
@@ -177,13 +165,14 @@ Token Compiler::syntheticToken(const std::string &text) {
 
 void Compiler::method() {
   consume(TOKEN_IDENTIFIER, "Expect method name.");
-  uint8_t constant = identifierConstant(&previous);
+  uint8_t constant = identifierConstant(previous);
 
-  FunctionType type = TYPE_METHOD; // is the variable needed?
+  FunctionType type = TYPE_METHOD;
   if (previous.length == 4 &&
-      previous.lexeme.compare("init") == 0) { // Q: is the first condition really necessary?
+      previous.lexeme.compare("init") == 0) {
     type = TYPE_INITIALIZER;
   }
+
   function(type);
   emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_METHOD),
             constant);
@@ -191,14 +180,13 @@ void Compiler::method() {
 
 uint8_t Compiler::parseVariable(const std::string &errorMessage) {
   consume(TOKEN_IDENTIFIER, errorMessage);
-
   declareVariable();
   if (currentEnvironment->getScopeDepth() > 0) return 0;
 
-  return identifierConstant(&previous); // Q: is passing a pointer to the token the best?
+  return identifierConstant(previous);
 }
 
-uint8_t Compiler::identifierConstant(Token* name) {
+uint8_t Compiler::identifierConstant(const Token &name) {
   return makeConstant(Value(copyString(name)));
 }
 
@@ -226,41 +214,31 @@ void Compiler::ifStatement() {
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
-
   int thenJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP_IF_FALSE));
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
   statement();
-
   int elseJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP));
-
   patchJump(thenJump);
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
-
   if (match(TOKEN_ELSE)) statement();
   patchJump(elseJump);
 }
 
 void Compiler::whileStatement() {
   int loopStart = currentChunk()->getBytecodeCount();
-
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
-
   int exitJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP_IF_FALSE));
-
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
   statement();
-
   emitLoop(loopStart);
-
   patchJump(exitJump);
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
 }
 
 void Compiler::forStatement() {
   beginScope();
-
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
   if (match(TOKEN_SEMICOLON)) {
     // No initializer.
@@ -271,7 +249,6 @@ void Compiler::forStatement() {
   }
 
   int loopStart = currentChunk()->getBytecodeCount();
-
   int exitJump = -1;
   if (!match(TOKEN_SEMICOLON)) {
     expression();
@@ -279,29 +256,25 @@ void Compiler::forStatement() {
 
     // Jump out of the loop if the condition is false.
     exitJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP_IF_FALSE));
-    emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP)); // Condition.
+    emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
   }
 
   if (!match(TOKEN_RIGHT_PAREN)) {
     int bodyJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP));
-
     int incrementStart = currentChunk()->getBytecodeCount();
     expression();
     emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
-
     emitLoop(loopStart);
     loopStart = incrementStart;
     patchJump(bodyJump);
   }
 
   statement();
-
   emitLoop(loopStart);
-
   if (exitJump != -1) {
     patchJump(exitJump);
-    emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP)); // Condition.
+    emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
   }
 
   endScope();
@@ -327,9 +300,8 @@ void Compiler::returnStatement() {
 
 void Compiler::emitLoop(int loopStart) {
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_LOOP));
-
   int offset = currentChunk()->getBytecodeCount() - loopStart + 2;
-  if (offset > std::numeric_limits<uint16_t>::max()) { // TODO: consider putting limits constant in constants header file
+  if (offset > std::numeric_limits<uint16_t>::max()) {
     reporter.error(previous, "Loop body too large.");
   }
 
@@ -346,8 +318,7 @@ int Compiler::emitJump(uint8_t instruction) {
 
 void Compiler::patchJump(int offset) {
   int jump = currentChunk()->getBytecodeCount() - offset - 2;
-
-  if (jump > std::numeric_limits<uint16_t>::max()) {  // TODO: consider putting limits constant in constants header file
+  if (jump > std::numeric_limits<uint16_t>::max()) {
     reporter.error(previous, "Too much code to jump over.");
   }
 
@@ -370,10 +341,12 @@ void Compiler::beginScope() {
 void Compiler::endScope() {
   currentEnvironment->decrementScopeDepth();
 
+  Local *local{ nullptr };
   while (currentEnvironment->getLocalCount() > 0 &&
-         (currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1))->depth >
+         (local = currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1))->depth >
             currentEnvironment->getScopeDepth()) {
-    if (currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1)->isCaptured) {
+
+    if (local->isCaptured) {
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_CLOSE_UPVALUE));
     } else {
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
@@ -399,9 +372,7 @@ void Compiler::synchronise() {
         return;
 
       default:
-        // Q: should there be a break here, for cleanliness?
-        // Do nothing.
-        ;
+        break;
     }
 
     advance();
@@ -422,8 +393,8 @@ void Compiler::expressionStatement() {
 
 bool Compiler::match(TokenType type) {
   if (type == TOKEN_EOF && check(type)) return true;
-
   if (!check(type)) return false;
+
   advance();
   return true;
 }
@@ -433,14 +404,14 @@ bool Compiler::check(TokenType type) {
 }
 
 void Compiler::expression() {
-  parsePrecedence(PRECEDENCE_ASSIGNMENT);
+  parsePrecedence(Precedence::ASSIGNMENT);
 }
 
 void Compiler::parsePrecedence(Precedence precedence) {
   advance();
-  bool canAssign = precedence <= PRECEDENCE_ASSIGNMENT;
+  bool canAssign = precedence <= Precedence::ASSIGNMENT;
   invokePrefixRule(canAssign);
-  while (precedence <= tokenPrecedence[current.type]) {
+  while (precedence <= tokenPrecedence.at(current.type)) {
     advance();
     invokeInfixRule(canAssign);
   }
@@ -501,7 +472,8 @@ void Compiler::invokePrefixRule(bool canAssign) {
       break;
 
     default:
-      reporter.error(previous, "Unexpected token type. No corresponding prefix rule.");
+      reporter.error(previous,
+                     "Unexpected token type. No corresponding prefix rule.");
       break;
   }
 }
@@ -557,37 +529,30 @@ void Compiler::invokeInfixRule(bool canAssign) {
       break;
 
     default:
-      reporter.error(previous, "Unexpected token type. No corresponding infix rule.");
+      reporter.error(previous,
+                     "Unexpected token type. No corresponding infix rule.");
       break;
   }
 }
 
 void Compiler::number() {
-  // Q: is there a better way to do this?
-  // According to this thread, it depends on the locale:
-  // https://stackoverflow.com/questions/1012571/stdstring-to-float-or-double
-  double value = std::stod(previous.lexeme);
-  emitConstant(Value{ Value::ValueType::VAL_NUMBER, value });
-
+  emitConstant(Value{ Value::ValueType::VAL_NUMBER,
+                      std::stod(previous.lexeme) });
 }
 
 void Compiler::and_() {
   int endJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP_IF_FALSE));
-
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
-  parsePrecedence(PRECEDENCE_AND);
-
+  parsePrecedence(Precedence::AND);
   patchJump(endJump);
 }
 
 void Compiler::or_() {
   int elseJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP_IF_FALSE));
   int endJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP));
-
   patchJump(elseJump);
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
-
-  parsePrecedence(PRECEDENCE_OR);
+  parsePrecedence(Precedence::OR);
   patchJump(endJump);
 }
 
@@ -596,6 +561,7 @@ void Compiler::this_() {
     reporter.error(previous, "Cannot use 'this' outside of a class.");
     return;
   }
+
   variable(false);
 }
 
@@ -608,14 +574,14 @@ void Compiler::super_() {
 
   consume(TOKEN_DOT, "Expect '.' after 'super'.");
   consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
-  uint8_t name = identifierConstant(&previous);
-
+  uint8_t name = identifierConstant(previous);
   namedVariable(syntheticToken("this"), false);
   if (match(TOKEN_LEFT_PAREN)) {
     uint8_t argCount = argumentList();
     namedVariable(syntheticToken("super"), false);
     emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_SUPER_INVOKE),
               name);
+
     emitByte(argCount);
   } else {
     namedVariable(syntheticToken("super"), false);
@@ -632,8 +598,7 @@ void Compiler::call() {
 
 void Compiler::dot(bool canAssign) {
   consume(TOKEN_IDENTIFIER, "Expect property name after '.'.");
-  uint8_t name = identifierConstant(&previous);
-
+  uint8_t name = identifierConstant(previous);
   if (canAssign && match(TOKEN_EQUAL)) {
     expression();
     emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_SET_PROPERTY),
@@ -642,6 +607,7 @@ void Compiler::dot(bool canAssign) {
     uint8_t argCount = argumentList();
     emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_INVOKE),
               name);
+
     emitByte(argCount);
   } else {
     emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_GET_PROPERTY),
@@ -654,10 +620,10 @@ uint8_t Compiler::argumentList() {
   if (!check(TOKEN_RIGHT_PAREN)) {
     do {
       expression();
-
       if (argCount == 255) {
         reporter.error(previous, "Cannot have more than 255 arguments.");
       }
+
       argCount++;
     } while (match(TOKEN_COMMA));
   }
@@ -683,14 +649,14 @@ void Compiler::literal() {
 }
 
 void Compiler::string() {
-  emitConstant(Value(copyString(&previous)));
+  emitConstant(Value(copyString(previous)));
 }
 
 void Compiler::variable(bool canAssign) {
   namedVariable(previous, canAssign);
 }
 
-void Compiler::namedVariable(Token name, bool canAssign) {
+void Compiler::namedVariable(const Token &name, bool canAssign) {
   uint8_t getOp, setOp;
   int arg = currentEnvironment->resolveLocal(name);
   if (arg != -1) {
@@ -700,7 +666,7 @@ void Compiler::namedVariable(Token name, bool canAssign) {
     getOp = static_cast<unsigned int>(Chunk::OpCode::OP_GET_UPVALUE);
     setOp = static_cast<unsigned int>(Chunk::OpCode::OP_SET_UPVALUE);
   } else {
-    arg = identifierConstant(&name); // Q: why pass a pointer? Good question.
+    arg = identifierConstant(name);
     getOp = static_cast<unsigned int>(Chunk::OpCode::OP_GET_GLOBAL);
     setOp = static_cast<unsigned int>(Chunk::OpCode::OP_SET_GLOBAL);
   }
@@ -713,41 +679,31 @@ void Compiler::namedVariable(Token name, bool canAssign) {
   }
 }
 
-// TODO: decide whether to return StringObject* or std::unique_ptr/std::shared_ptr
-// TODO: pass Token by const reference. This needs to be done in several places...
-std::shared_ptr<StringObject> Compiler::copyString(Token* name) {
-  // Q: how can I make sure that stringObject gets deleted and memory gets freed at the right time?
-
-  std::unordered_map<std::string, Value>::iterator it = strings->find(name->lexeme);
+std::shared_ptr<StringObject> Compiler::copyString(const Token &name) {
+  std::unordered_map<std::string, Value>::iterator it = strings->find(name.lexeme);
   if (it == strings->end()) {
-//    StringObject* stringObject = new StringObject(name->lexeme);
-//    strings->insert(std::make_pair(name->lexeme, Value{ stringObject }));
-
-    auto stringObject{ std::make_shared<StringObject>(name->lexeme) };
+    auto stringObject{ std::make_shared<StringObject>(name.lexeme) };
     Value value{ stringObject };
-    strings->insert(std::make_pair(name->lexeme,
-                                   value));
-
+    strings->insert(std::make_pair(name.lexeme, value));
     return stringObject;
   }
 
-  return (it->second).asString(); // Q: are parentheses necessary?
+  return (it->second).asString();
 }
 
-// Q: should this class be passed by value?
-void Compiler::emitConstant(Value value) {
+void Compiler::emitConstant(const Value &value) {
   emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_CONSTANT),
             makeConstant(value));
 }
 
-uint8_t Compiler::makeConstant(Value value) { // TODO: pass by const reference? Note that value has a shared_ptr
-  int constant = currentChunk()->addConstant(value);
-  if ((unsigned)constant > UINT8_MAX) {
+uint8_t Compiler::makeConstant(const Value &value) {
+  auto constant = static_cast<unsigned int>(currentChunk()->addConstant(value));
+  if (constant > std::numeric_limits<uint8_t>::max()) {
     reporter.error(previous, "Too many constants in one chunk.");
-    return 0; // Q: could this be problematic?
+    return 0;
   }
 
-  return (uint8_t)constant; // TODO: static cast
+  return constant;
 }
 
 void Compiler::declareVariable() {
@@ -758,28 +714,23 @@ void Compiler::declareVariable() {
     return;
   }
 
-  Token* name = &previous; // Q: why create a pointer and then dereference it?
-
   for (int i = currentEnvironment->getLocalCount() - 1; i >= 0; i--) {
-    // Q: parentheses necessary?
-    // Q: why a pointer?
     Local* local = currentEnvironment->getLocal(i);
-
     if (local->depth != -1 && local->depth < currentEnvironment->getScopeDepth()) {
       break;
     }
 
-    if (identifiersEqual(name, &local->name)) {
+    if (identifiersEqual(previous, local->name)) {
       reporter.error(previous, "Already variable with this name in this scope.");
     }
   }
 
-  currentEnvironment->addLocal(*name);
+  currentEnvironment->addLocal(previous);
 }
 
-bool Compiler::identifiersEqual(Token* a, Token* b) {
-  if (a->length != b->length) return false;
-  return a->lexeme.compare(b->lexeme) == 0;
+bool Compiler::identifiersEqual(const Token &a, const Token &b) {
+  if (a.length != b.length) return false;
+  return a.lexeme.compare(b.lexeme) == 0;
 }
 
 void Compiler::defineVariable(uint8_t global) {
@@ -794,7 +745,7 @@ void Compiler::defineVariable(uint8_t global) {
 
 void Compiler::markInitialised() {
   if (currentEnvironment->getScopeDepth() == 0) return;
-  // TODO: try to make this more readable.
+
   currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1)->depth = currentEnvironment->getScopeDepth();
 }
 
@@ -816,7 +767,7 @@ void Compiler::grouping() {
 
 void Compiler::unary() {
   TokenType operatorType = previous.type;
-  parsePrecedence(PRECEDENCE_UNARY);
+  parsePrecedence(Precedence::UNARY);
   switch (operatorType) {
     case TOKEN_BANG:
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_NOT));
@@ -831,8 +782,8 @@ void Compiler::unary() {
 
 void Compiler::binary() {
   TokenType operatorType = previous.type;
-  Precedence precedence = tokenPrecedence[operatorType];
-  parsePrecedence((Precedence)(precedence + 1));
+  int precedence = static_cast<int>(tokenPrecedence.at(operatorType));
+  parsePrecedence(static_cast<Precedence>(precedence + 1));
   switch (operatorType) {
     case TOKEN_BANG_EQUAL:
       emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_EQUAL),
@@ -886,8 +837,11 @@ FunctionObject* Compiler::endCompiler() {
   FunctionObject* function = currentEnvironment->getFunction();
 
 #ifdef DEBUG_PRINT_CODE
-  //if (!hadError) currentChunk()->disassemble(function->getName() != NULL ? function->getName()->getChars() : "<script>");
-  if (!reporter.hadError()) currentChunk()->disassemble(function->getName() != NULL ? function->getName()->getChars() : "<script>");
+  if (!reporter.hadError()) {
+    currentChunk()->disassemble(function->getName() != NULL ?
+                                function->getName()->getChars() :
+                                "<script>");
+  }
 #endif // DEBUG_PRINT_CODE
 
   currentEnvironment = currentEnvironment->releaseEnclosing();
@@ -896,15 +850,13 @@ FunctionObject* Compiler::endCompiler() {
 
 void Compiler::emitReturn() {
   if (currentEnvironment->getFunctionType() == TYPE_INITIALIZER) {
-    emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_GET_LOCAL),
-              0);
+    emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_GET_LOCAL), 0);
   } else {
     emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_NULL));
   }
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_RETURN));
 }
 
-// Q: is it better to return a pointer to a Chunk?
 Chunk* Compiler::currentChunk() {
   return currentEnvironment->getFunction()->getChunk();
 }
