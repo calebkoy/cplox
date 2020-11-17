@@ -139,12 +139,12 @@ class Compiler {
   void emitConstant(const Value &value);
   uint8_t makeConstant(const Value &value);
   void emitReturn();
-  FunctionObject* endCompiler();
+  std::shared_ptr<FunctionObject> endCompiler();
 
 public:
   Compiler(std::unordered_map<std::string, Value> *strings);
 
-  FunctionObject* compile();
+  std::shared_ptr<FunctionObject> compile();
   void reset();
 
   void setTokens(const std::vector<Token> &tokens);

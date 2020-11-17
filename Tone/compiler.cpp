@@ -15,13 +15,13 @@ Compiler::Compiler(std::unordered_map<std::string, Value> *strings) :
 {
 }
 
-FunctionObject* Compiler::compile() {
+std::shared_ptr<FunctionObject> Compiler::compile() {
   advance();
   while (!match(TOKEN_EOF)) {
     declaration();
   }
 
-  FunctionObject* function = endCompiler();
+  auto function = endCompiler();
   return reporter.hadError() ? nullptr : function;
 }
 
@@ -82,9 +82,9 @@ void Compiler::function(FunctionType type) {
   consume(TOKEN_LEFT_BRACE, "Expect '{' before function body.");
   block();
   auto upvalues = currentEnvironment->releaseUpvalues();
-  FunctionObject* function = endCompiler();
+  auto function = endCompiler();
   emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_CLOSURE),
-            makeConstant(Value{ std::shared_ptr<FunctionObject>(function) }));
+            makeConstant(Value{ function }));
 
   for (const auto &upvalue : upvalues) {
     emitByte(upvalue.isLocal ? 1 : 0);
@@ -832,9 +832,9 @@ void Compiler::emitBytes(uint8_t byte1, uint8_t byte2) {
   emitByte(byte2);
 }
 
-FunctionObject* Compiler::endCompiler() {
+std::shared_ptr<FunctionObject> Compiler::endCompiler() {
   emitReturn();
-  FunctionObject* function = currentEnvironment->getFunction();
+  auto function = currentEnvironment->getFunction();
 
 #ifdef DEBUG_PRINT_CODE
   if (!reporter.hadError()) {

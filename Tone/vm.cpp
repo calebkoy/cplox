@@ -535,9 +535,7 @@ bool VM::valuesEqual(Value a, Value b) {
     case Value::ValueType::VAL_NULL:   return true;
     case Value::ValueType::VAL_NUMBER: return a.asNumber() == b.asNumber();
     case Value::ValueType::VAL_OBJECT: {
-      // Q: can I do this? Depends on how asObject is implemented/should be implemented
-      // Q: is .get() necessary?
-      return a.asObject().get() == b.asObject().get();
+      return a.asObject() == b.asObject();
     }
     default:
       return false;
@@ -618,26 +616,19 @@ bool VM::call(ClosureObject* closure, int argCount) {
   return true;
 }
 
-//UpvalueObject* VM::captureUpvalue(Value* local) {
 std::shared_ptr<UpvalueObject> VM::captureUpvalue(Value* local) {
-  //UpvalueObject* previousUpvalue = nullptr;
   std::shared_ptr<UpvalueObject> previousUpvalue;
   auto upvalue = openUpvalues;
-
-  // Q: is .get() necessary?
-  while (upvalue.get() != nullptr && upvalue->getLocation() > local) {
+  while (upvalue != nullptr && upvalue->getLocation() > local) {
     previousUpvalue = upvalue;
     upvalue = upvalue->getNext();
   }
 
-  if (upvalue.get() != nullptr && upvalue->getLocation() == local) return upvalue;
+  if (upvalue != nullptr && upvalue->getLocation() == local) return upvalue;
 
-  //UpvalueObject* createdUpvalue = new UpvalueObject{ local }; // Q: how to avoid memory leaks?
   auto createdUpvalue{ std::make_shared<UpvalueObject>( local ) };
-
   createdUpvalue->setNext(upvalue);
-
-  if (previousUpvalue.get() == nullptr) {
+  if (previousUpvalue == nullptr) {
     openUpvalues = createdUpvalue;
   } else {
     previousUpvalue->setNext(createdUpvalue);
@@ -647,9 +638,8 @@ std::shared_ptr<UpvalueObject> VM::captureUpvalue(Value* local) {
 }
 
 void VM::closeUpvalues(Value* last) {
-  while (openUpvalues.get() != nullptr && // Q: is .get() necessary?
+  while (openUpvalues != nullptr &&
          openUpvalues->getLocation() >= last) {
-    //UpvalueObject* upvalue = openUpvalues;
     auto upvalue = openUpvalues;
     upvalue->setClosed(*(upvalue->getLocation()));
     upvalue->setLocation(upvalue->getClosed());

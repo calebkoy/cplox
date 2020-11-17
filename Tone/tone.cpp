@@ -58,11 +58,10 @@ InterpretResult Tone::interpret(const std::string &source) {
 
   compiler.reset();
   compiler.setTokens(tokens);
-  FunctionObject* function = compiler.compile();
+  auto function = compiler.compile();
   if (function == nullptr) return INTERPRET_COMPILATION_ERROR;
 
-  auto functionPointer = std::shared_ptr<FunctionObject>(function);
-  auto closure{ std::make_shared<ClosureObject>(functionPointer) };
+  auto closure{ std::make_shared<ClosureObject>(function) };
   vm.pushOntoStack(Value{ closure });
   vm.call(closure.get(), 0);
   return vm.run();

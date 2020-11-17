@@ -6,8 +6,8 @@
 #include "functionobject.h"
 #include "scanner.h"
 
-#include <array> // TODO: remove if you don't use
-#include <memory> // TODO: for std::unique_ptr; remove if not using
+#include <array>
+#include <memory>
 #include <vector>
 
 struct Local {
@@ -22,52 +22,40 @@ struct Upvalue {
 };
 
 class Environment {
-  //static const int uint8Count = std::numeric_limits<uint8_t>::max() + 1;
-  std::array<Local, constants::maxLocals> locals; // TODO: consider making this a std::vector too for consistency with upvalues
-  //std::array<Upvalue, constants::maxLocals> upvalues;
-
+  std::array<Local, constants::maxLocals> locals;
   std::vector<Upvalue> upvalues;
-
-  int scopeDepth;
-  int localCount;
-  FunctionObject* function;
-  FunctionType functionType; // Q: could this go in the FunctionObject class?
-  //Environment* enclosing;
+  int scopeDepth{ 0 };
+  int localCount{ 0 };
+  FunctionType functionType;
   std::unique_ptr<Environment> enclosing;
   ErrorReporter &reporter;
+  std::shared_ptr<FunctionObject> function;
 
+  bool identifiersEqual(const Token &a, const Token &b);
 
 public:
-  Environment();
-  //Environment(FunctionType type, Environment* environment);
-  Environment(FunctionType type, std::unique_ptr<Environment> enclosing,
+  Environment(FunctionType type,
+              std::unique_ptr<Environment> enclosing,
               ErrorReporter &reporter);
 
+  bool localCountAtMax();
   void incrementScopeDepth();
   void decrementScopeDepth();
   void decrementLocalCount();
   void addLocal(Token name);
-  bool localCountAtMax();
   Local* getLocal(int index);
   Upvalue* getUpvalue(int index);
 
-  //TODO: remove if not needed
-  //static int getUint8Count();
-
   int getScopeDepth();
   int getLocalCount();
-  FunctionObject* getFunction(); // TODO: at the end of it all, remove this if it's not needed
-  //Environment* getEnclosing(); // TODO: remove if no longer necessary
+  std::shared_ptr<FunctionObject> getFunction();
   std::unique_ptr<Environment> releaseEnclosing();
-  //std::array<Upvalue, constants::maxLocals> releaseUpvalues();
   std::vector<Upvalue> releaseUpvalues();
   FunctionType getFunctionType();
 
   int addUpvalue(uint8_t index, bool isLocal, const Token &name);
   int resolveUpvalue(const Token &name);
   int resolveLocal(const Token &name);
-
-  bool identifiersEqual(const Token &a, const Token &b);
 };
 
 #endif // ENVIRONMENT_H
