@@ -36,7 +36,7 @@ void main(List<String> arguments) {
     _runTests();
   } else {    
     var tests = {arguments[0]: "pass"};
-    _interpreter = Interpreter("cplox", tests);
+    _interpreter = Interpreter("build/cploxd", tests);
     _runTest(arguments[0]);
   }      
 }
@@ -49,7 +49,7 @@ void _setUpInterpreter() {
     "test/string/multiline.cplox": "skip" // TODO: fix conversion from stdout.
   };
 
-  _interpreter = Interpreter("cplox", tests);  
+  _interpreter = Interpreter("build/cploxd", tests);  
 }
 
 bool _runTests() {    

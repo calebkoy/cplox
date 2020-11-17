@@ -840,7 +840,7 @@ std::shared_ptr<FunctionObject> Compiler::endCompiler() {
 
 #ifdef DEBUG_PRINT_CODE
   if (!reporter.hadError()) {
-    currentChunk()->disassemble(function->getName() != NULL ?
+    currentChunk()->disassemble(function->getName() != nullptr ?
                                 function->getName()->getChars() :
                                 "<script>");
   }
@@ -865,7 +865,11 @@ Chunk* Compiler::currentChunk() {
 
 void Compiler::reset() {
   currentTokenIndex = 0;
+  currentClassEnvironment = nullptr;
   reporter.reset();
+  currentEnvironment.reset(new Environment(FunctionObject::FunctionType::TYPE_SCRIPT,
+                                           nullptr,
+                                           reporter));
 }
 
 void Compiler::setTokens(const std::vector<Token> &tokens) {

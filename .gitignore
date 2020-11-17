@@ -1,12 +1,13 @@
 # Build-related files
 **/*.o
+build/*
 
 # IDE-related files
 **/*.cbp
 **/*.cscope_file_list
 **/*.depend
 **/*.layout
-Cplox/bin/Debug/*
+src/bin/*
 .vscode/
 
 # Dart-related
