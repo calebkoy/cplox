@@ -12,7 +12,8 @@ class BoundMethodObject : public Object {
   std::shared_ptr<ClosureObject> method;
 
 public:
-  BoundMethodObject(Value receiver, std::shared_ptr<ClosureObject> method);
+  BoundMethodObject(const Value &receiver,
+                    std::shared_ptr<ClosureObject> method);
 
   std::shared_ptr<ClosureObject> getMethod();
   Value getReceiver();

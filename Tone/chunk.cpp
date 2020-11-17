@@ -129,7 +129,7 @@ int Chunk::disassembleSimpleInstruction(const std::string& name, int offset) {
   return offset + 1;
 }
 
-int Chunk::addConstant(Value value) {
+int Chunk::addConstant(const Value &value) {
   constants.push_back(value);
   return static_cast<int>(constants.size() - 1);
 }

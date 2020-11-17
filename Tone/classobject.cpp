@@ -14,7 +14,7 @@ bool ClassObject::findMethod(const std::string &name) {
   return it != methods.end();
 }
 
-void ClassObject::setMethod(const std::string &name, Value method) {
+void ClassObject::setMethod(const std::string &name, const Value &method) {
   methods[name] = method;
 }
 

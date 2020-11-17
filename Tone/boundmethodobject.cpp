@@ -2,7 +2,7 @@
 
 #include <utility>
 
-BoundMethodObject::BoundMethodObject(Value receiver,
+BoundMethodObject::BoundMethodObject(const Value &receiver,
                                      std::shared_ptr<ClosureObject> method) :
   Object{ OBJECT_BOUND_METHOD }, receiver{ receiver }, method(std::move(method))
 {

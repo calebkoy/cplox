@@ -58,7 +58,7 @@ bool Environment::localCountAtMax() {
   return localCount == constants::maxLocals;
 }
 
-void Environment::addLocal(Token name) {
+void Environment::addLocal(const Token &name) {
   locals.at(localCount++) = { name, -1, false };
 }
 

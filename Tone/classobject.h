@@ -15,7 +15,7 @@ class ClassObject : public Object {
 public:
   ClassObject(std::shared_ptr<StringObject> name);
 
-  void setMethod(const std::string &name, Value method);
+  void setMethod(const std::string &name, const Value &method);
   Value getMethod(const std::string &name);
   bool findMethod(const std::string &name);
 

@@ -42,7 +42,7 @@ public:
   void incrementScopeDepth();
   void decrementScopeDepth();
   void decrementLocalCount();
-  void addLocal(Token name);
+  void addLocal(const Token &name);
   Local* getLocal(int index);
   Upvalue* getUpvalue(int index);
 
