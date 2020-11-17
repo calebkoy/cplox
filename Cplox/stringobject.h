@@ -6,12 +6,12 @@
 #include <string>
 
 class StringObject : public Object {
-  std::string chars; // Q: better name than chars?
+  std::string chars;
 
 public:
   StringObject(const std::string &chars);
 
-  std::string getChars(); // Q: is there a better way of returning the std::string?
+  std::string getChars();
 
   friend std::ostream& operator<<(std::ostream& out, const StringObject &object) {
     return out << object.chars;
