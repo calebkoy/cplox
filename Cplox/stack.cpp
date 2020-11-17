@@ -8,7 +8,7 @@ void Stack::reset() {
   top = arr.data();
 }
 
-void Stack::push(Value value) {
+void Stack::push(const Value &value) {
   *top = value;
   top++;
 }
@@ -19,32 +19,26 @@ Value Stack::pop() {
 }
 
 Value Stack::peek(int distance) {
-  //Q: does std:array store its members in contiguous slots? If not, how do I fix this function?
-  // Q: what's the best way to return? By pointer? By value?
-
   return *(top - 1 - distance);
 }
 
-// Q: is this the best way to return the value?
 Value Stack::at(int slot) {
-  return arr.at(slot); // Q: how to deal w/ error handling (guard clauses?)?
+  return arr.at(slot);
 }
 
-void Stack::set(int slot, Value value) {
-  // Q: how to do error checking?
+void Stack::set(int slot, const Value &value) {
   arr.at(slot) = value;
 }
 
 void Stack::print() {
   auto begin{ arr.begin() };
-
   for (auto p{ begin }; p < top; ++p) {
-    std::cout << "[ " << (*p) << " ]";
+    std::cout << "[ " << *p << " ]";
   }
 }
 
 int Stack::getSize() {
-  return (int)arr.size(); // Q: is cast ok?
+  return static_cast<int>(arr.size());
 }
 
 Value* Stack::getTop() {
@@ -52,5 +46,5 @@ Value* Stack::getTop() {
 }
 
 void Stack::setTop(Value* value) {
-  top = value; // Q: is pointer assignment what I actually want to do here?
+  top = value;
 }

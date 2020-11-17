@@ -6,24 +6,26 @@
 #include <array>
 
 class Stack {
-  static const int max{ 64 * 256 }; // Todo: clean this up by removing hardcoded values
+  static const int framesMax{ 64 };
+  static const int stackMax{ 256 };
+  static const int max{ framesMax * stackMax };
   std::array<Value, max> arr;
-  Value* top{ nullptr };
+  Value* top;
 
 public:
   Stack();
+
   void reset();
-  void push(Value value);
+  void push(const Value &value);
   Value pop();
   Value peek(int distance);
   Value at(int slot);
-  void set(int slot, Value value); // Q: Is passing value by value best here?
+  void set(int slot, const Value &value);
   void print();
   int getSize();
 
   Value* getTop();
-
-  void setTop(Value*);
+  void setTop(Value *value);
 };
 
 #endif // STACK_H
