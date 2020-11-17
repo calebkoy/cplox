@@ -1,2 +1,0 @@
-var myVar = "myVar";
-print myVar; // expect: myVar

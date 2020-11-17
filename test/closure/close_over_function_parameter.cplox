@@ -1,0 +1,11 @@
+var f;
+
+function foo(param) {
+  function f_() {
+    print param;
+  }
+  f = f_;
+}
+foo("param");
+
+f(); // expect: param

@@ -1,0 +1,18 @@
+function caller(g) {
+  g();
+  // g should be a function, not null.
+  print g == null; // expect: false
+}
+
+function callCaller() {
+  var capturedVar = "before";
+  var a = "a";
+
+  function f() {    
+    capturedVar = "after";   
+  }
+
+  caller(f);
+}
+
+callCaller();

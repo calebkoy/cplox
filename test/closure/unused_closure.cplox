@@ -1,0 +1,8 @@
+{
+  var a = "a";
+  if (false) {
+    function foo() { a; }
+  }
+}
+
+print "ok"; // expect: ok

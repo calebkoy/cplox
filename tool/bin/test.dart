@@ -36,7 +36,7 @@ void main(List<String> arguments) {
     _runTests();
   } else {    
     var tests = {arguments[0]: "pass"};
-    _interpreter = Interpreter("tone", tests);
+    _interpreter = Interpreter("cplox", tests);
     _runTest(arguments[0]);
   }      
 }
@@ -45,15 +45,15 @@ void _setUpInterpreter() {
   var tests = {
     "test": "pass",
     "test/scanning": "skip", // These were only run when building the scanner.
-    "test/string/literals.tone": "skip", // TODO: fix non-ASCII printing issue.
-    "test/string/multiline.tone": "skip" // TODO: fix conversion from stdout.
+    "test/string/literals.cplox": "skip", // TODO: fix non-ASCII printing issue.
+    "test/string/multiline.cplox": "skip" // TODO: fix conversion from stdout.
   };
 
-  _interpreter = Interpreter("tone", tests);  
+  _interpreter = Interpreter("cplox", tests);  
 }
 
 bool _runTests() {    
-  for (var file in Glob("test/**.tone").listSync()) {
+  for (var file in Glob("test/**.cplox").listSync()) {
     _runTest(file.path);
   }
 

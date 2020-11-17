@@ -1,0 +1,11 @@
+""
+"a string"
+"multiline
+string is allowed"
+
+// Expect:
+// TOKEN_STRING
+// TOKEN_STRING a string
+// TOKEN_STRING multiline 
+// string is allowed
+// TOKEN_EOF

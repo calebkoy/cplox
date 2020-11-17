@@ -1,4 +1,4 @@
-# This Makefile builds Tone. 
+# This Makefile builds Cplox. 
 # It expects variables to be passed in for:
 #
 # MODE         "debug" or "release".

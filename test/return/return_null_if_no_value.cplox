@@ -1,0 +1,6 @@
+function f() {
+  return;
+  print "bad";
+}
+
+print f(); // expect: null

@@ -1,0 +1,3 @@
+function foo(a) {
+  var a; // Error at 'a': Already variable with this name in this scope.
+}

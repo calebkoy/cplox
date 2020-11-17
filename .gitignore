@@ -2,17 +2,14 @@
 **/*.o
 
 # IDE-related files
-Tone/Tone.cbp
-Tone/Tone.cscope_file_list
-Tone/Tone.depend
-Tone/Tone.layout
-Tone/bin/Debug/*
+**/*.cbp
+**/*.cscope_file_list
+**/*.depend
+**/*.layout
+Cplox/bin/Debug/*
 .vscode/
 
 # Dart-related
 tool/pubspec.lock
 tool/.packages
 tool/.dart_tool
-
-# Other
-grammar.txt
