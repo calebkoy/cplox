@@ -11,7 +11,9 @@
 
 Compiler::Compiler(std::unordered_map<std::string, Value> *strings) :
   strings{ strings },
-  currentEnvironment{ std::make_unique<Environment>(TYPE_SCRIPT, nullptr, reporter) }
+  currentEnvironment{ std::make_unique<Environment>(FunctionObject::FunctionType::TYPE_SCRIPT,
+                                                    nullptr,
+                                                    reporter) }
 {
 }
 
@@ -52,16 +54,16 @@ void Compiler::declaration() {
 void Compiler::functionDeclaration() {
   uint8_t global = parseVariable("Expect function name.");
   markInitialised();
-  function(TYPE_FUNCTION);
+  function(FunctionObject::FunctionType::TYPE_FUNCTION);
   defineVariable(global);
 }
 
-void Compiler::function(FunctionType type) {
+void Compiler::function(FunctionObject::FunctionType type) {
   currentEnvironment = std::make_unique<Environment>(type,
                                                      std::move(currentEnvironment),
                                                      reporter);
 
-  if (type != TYPE_SCRIPT) {
+  if (type != FunctionObject::FunctionType::TYPE_SCRIPT) {
     currentEnvironment->getFunction()->setName(copyString(previous));
   }
 
@@ -167,10 +169,10 @@ void Compiler::method() {
   consume(TOKEN_IDENTIFIER, "Expect method name.");
   uint8_t constant = identifierConstant(previous);
 
-  FunctionType type = TYPE_METHOD;
+  FunctionObject::FunctionType type = FunctionObject::FunctionType::TYPE_METHOD;
   if (previous.length == 4 &&
       previous.lexeme.compare("init") == 0) {
-    type = TYPE_INITIALIZER;
+    type = FunctionObject::FunctionType::TYPE_INITIALIZER;
   }
 
   function(type);
@@ -281,14 +283,14 @@ void Compiler::forStatement() {
 }
 
 void Compiler::returnStatement() {
-  if (currentEnvironment->getFunctionType() == TYPE_SCRIPT) {
+  if (currentEnvironment->getFunctionType() == FunctionObject::FunctionType::TYPE_SCRIPT) {
     reporter.error(previous, "Cannot return from top-level code.");
   }
 
   if (match(TOKEN_SEMICOLON)) {
     emitReturn();
   } else {
-    if (currentEnvironment->getFunctionType() == TYPE_INITIALIZER) {
+    if (currentEnvironment->getFunctionType() == FunctionObject::FunctionType::TYPE_INITIALIZER) {
       reporter.error(previous, "Cannot return a value from an initializer.");
     }
 
@@ -849,7 +851,7 @@ std::shared_ptr<FunctionObject> Compiler::endCompiler() {
 }
 
 void Compiler::emitReturn() {
-  if (currentEnvironment->getFunctionType() == TYPE_INITIALIZER) {
+  if (currentEnvironment->getFunctionType() == FunctionObject::FunctionType::TYPE_INITIALIZER) {
     emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_GET_LOCAL), 0);
   } else {
     emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_NULL));

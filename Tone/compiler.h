@@ -3,6 +3,7 @@
 
 #include "chunk.h"
 #include "environment.h"
+#include "functionobject.h"
 #include "error_reporter.h"
 #include "scanner.h"
 
@@ -100,7 +101,7 @@ class Compiler {
   void literal();
   void declaration();
   void functionDeclaration();
-  void function(FunctionType type);
+  void function(FunctionObject::FunctionType type);
   void variable(bool canAssign);
   void namedVariable(const Token &name, bool canAssign);
   void varDeclaration();

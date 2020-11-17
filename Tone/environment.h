@@ -26,7 +26,7 @@ class Environment {
   std::vector<Upvalue> upvalues;
   int scopeDepth{ 0 };
   int localCount{ 0 };
-  FunctionType functionType;
+  FunctionObject::FunctionType functionType;
   std::unique_ptr<Environment> enclosing;
   ErrorReporter &reporter;
   std::shared_ptr<FunctionObject> function;
@@ -34,7 +34,7 @@ class Environment {
   bool identifiersEqual(const Token &a, const Token &b);
 
 public:
-  Environment(FunctionType type,
+  Environment(FunctionObject::FunctionType type,
               std::unique_ptr<Environment> enclosing,
               ErrorReporter &reporter);
 
@@ -51,7 +51,7 @@ public:
   std::shared_ptr<FunctionObject> getFunction();
   std::unique_ptr<Environment> releaseEnclosing();
   std::vector<Upvalue> releaseUpvalues();
-  FunctionType getFunctionType();
+  FunctionObject::FunctionType getFunctionType();
 
   int addUpvalue(uint8_t index, bool isLocal, const Token &name);
   int resolveUpvalue(const Token &name);

@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-Environment::Environment(FunctionType type,
+Environment::Environment(FunctionObject::FunctionType type,
                          std::unique_ptr<Environment> enclosing,
                          ErrorReporter &reporter) :
                           functionType{ type },
@@ -11,7 +11,7 @@ Environment::Environment(FunctionType type,
                           function{ std::make_shared<FunctionObject>() }
 {
   Token token;
-  if (type != TYPE_FUNCTION) {
+  if (type != FunctionObject::FunctionType::TYPE_FUNCTION) {
     token.lexeme = "this";
     token.length = 4;
   } else {
@@ -74,7 +74,7 @@ std::vector<Upvalue> Environment::releaseUpvalues() {
   return returnValue;
 }
 
-FunctionType Environment::getFunctionType() {
+FunctionObject::FunctionType Environment::getFunctionType() {
   return functionType;
 }
 
