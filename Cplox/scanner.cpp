@@ -7,7 +7,6 @@ std::vector<Token> Scanner::scanTokens() {
   }
 
   addToken(TokenType::TOKEN_EOF, "", 0);
-
   return tokens;
 }
 
@@ -17,7 +16,6 @@ bool Scanner::isAtEnd() {
 
 void Scanner::scanToken() {
   char c = advance();
-
   if (isDigit(c)) {
     scanNumber();
     return;
@@ -115,7 +113,6 @@ bool Scanner::isAlpha(char c) {
 
 void Scanner::scanNumber() {
   while (isDigit(peek())) advance();
-
   if (peek() == '.' && isDigit(peekNext())) {
     advance();
     while (isDigit(peek())) advance();
@@ -126,9 +123,7 @@ void Scanner::scanNumber() {
 
 void Scanner::scanAlpha() {
   while (isDigit(peek()) | isAlpha(peek())) advance();
-
   std::string text = source.substr(start, current-start);
-
   if (reservedWords.find(text) != reservedWords.end()) {
     addToken(reservedWords[text], text, current - start);
   } else {
