@@ -8,9 +8,9 @@ void ErrorReporter::error(const Token &token, const std::string &message) {
 
   std::cerr << "[line " << token.line << "] Error";
 
-  if (token.type == TOKEN_EOF) {
+  if (token.type == TokenType::TOKEN_EOF) {
     std::cerr << " at end";
-  } else if (token.type == TOKEN_ERROR) {
+  } else if (token.type == TokenType::TOKEN_ERROR) {
     // Do nothing.
   } else {
     std::cerr << " at " << "'" << token.lexeme << "'";

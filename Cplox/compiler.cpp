@@ -19,7 +19,7 @@ Compiler::Compiler(std::unordered_map<std::string, Value> *strings) :
 
 std::shared_ptr<FunctionObject> Compiler::compile() {
   advance();
-  while (!match(TOKEN_EOF)) {
+  while (!match(TokenType::TOKEN_EOF)) {
     declaration();
   }
 
@@ -31,18 +31,18 @@ void Compiler::advance() {
   previous = current;
   for (;;) {
     current = tokens.at(currentTokenIndex++);
-    if (current.type != TOKEN_ERROR) break;
+    if (current.type != TokenType::TOKEN_ERROR) break;
 
     reporter.error(current, current.lexeme);
   }
 }
 
 void Compiler::declaration() {
-  if (match(TOKEN_CLASS)) {
+  if (match(TokenType::TOKEN_CLASS)) {
     classDeclaration();
-  } else if (match(TOKEN_FUNCTION)) {
+  } else if (match(TokenType::TOKEN_FUNCTION)) {
     functionDeclaration();
-  } else if (match(TOKEN_VAR)) {
+  } else if (match(TokenType::TOKEN_VAR)) {
     varDeclaration();
   } else {
     statement();
@@ -68,8 +68,8 @@ void Compiler::function(FunctionObject::FunctionType type) {
   }
 
   beginScope();
-  consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
-  if (!check(TOKEN_RIGHT_PAREN)) {
+  consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after function name.");
+  if (!check(TokenType::TOKEN_RIGHT_PAREN)) {
     do {
       currentEnvironment->getFunction()->incrementArity();
       if (currentEnvironment->getFunction()->getArity() > 255) {
@@ -78,10 +78,10 @@ void Compiler::function(FunctionObject::FunctionType type) {
 
       uint8_t paramConstant = parseVariable("Expect parameter name.");
       defineVariable(paramConstant);
-    } while (match(TOKEN_COMMA));
+    } while (match(TokenType::TOKEN_COMMA));
   }
-  consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
-  consume(TOKEN_LEFT_BRACE, "Expect '{' before function body.");
+  consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+  consume(TokenType::TOKEN_LEFT_BRACE, "Expect '{' before function body.");
   block();
   auto upvalues = currentEnvironment->releaseUpvalues();
   auto function = endCompiler();
@@ -96,18 +96,18 @@ void Compiler::function(FunctionObject::FunctionType type) {
 
 void Compiler::varDeclaration() {
   uint8_t global = parseVariable("Expect variable name.");
-  if (match(TOKEN_EQUAL)) {
+  if (match(TokenType::TOKEN_EQUAL)) {
     expression();
   } else {
     emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_NULL));
   }
 
-  consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+  consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
   defineVariable(global);
 }
 
 void Compiler::classDeclaration() {
-  consume(TOKEN_IDENTIFIER, "Expect class name.");
+  consume(TokenType::TOKEN_IDENTIFIER, "Expect class name.");
   Token className = previous;
   uint8_t nameConstant = identifierConstant(previous);
   declareVariable();
@@ -121,8 +121,8 @@ void Compiler::classDeclaration() {
   classEnvironment.hasSuperclass = false;
   classEnvironment.enclosing = currentClassEnvironment;
   currentClassEnvironment = &classEnvironment;
-  if (match(TOKEN_LESS)) {
-    consume(TOKEN_IDENTIFIER, "Expect superclass name.");
+  if (match(TokenType::TOKEN_LESS)) {
+    consume(TokenType::TOKEN_IDENTIFIER, "Expect superclass name.");
     variable(false);
     if (identifiersEqual(className, previous)) {
       reporter.error(previous, "A class cannot inherit from itself.");
@@ -144,12 +144,12 @@ void Compiler::classDeclaration() {
   // Load the class onto the stack before compiling
   // its body, so that its methods can be bound to it.
   namedVariable(className, false);
-  consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
-  while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+  consume(TokenType::TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+  while (!check(TokenType::TOKEN_RIGHT_BRACE) && !check(TokenType::TOKEN_EOF)) {
     method();
   }
 
-  consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+  consume(TokenType::TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
   if (classEnvironment.hasSuperclass) {
     endScope();
@@ -166,7 +166,7 @@ Token Compiler::syntheticToken(const std::string &text) {
 }
 
 void Compiler::method() {
-  consume(TOKEN_IDENTIFIER, "Expect method name.");
+  consume(TokenType::TOKEN_IDENTIFIER, "Expect method name.");
   uint8_t constant = identifierConstant(previous);
 
   FunctionObject::FunctionType type = FunctionObject::FunctionType::TYPE_METHOD;
@@ -181,7 +181,7 @@ void Compiler::method() {
 }
 
 uint8_t Compiler::parseVariable(const std::string &errorMessage) {
-  consume(TOKEN_IDENTIFIER, errorMessage);
+  consume(TokenType::TOKEN_IDENTIFIER, errorMessage);
   declareVariable();
   if (currentEnvironment->getScopeDepth() > 0) return 0;
 
@@ -193,17 +193,17 @@ uint8_t Compiler::identifierConstant(const Token &name) {
 }
 
 void Compiler::statement() {
-  if (match(TOKEN_PRINT)) {
+  if (match(TokenType::TOKEN_PRINT)) {
     printStatement();
-  } else if (match(TOKEN_FOR)) {
+  } else if (match(TokenType::TOKEN_FOR)) {
     forStatement();
-  } else if (match(TOKEN_IF)) {
+  } else if (match(TokenType::TOKEN_IF)) {
     ifStatement();
-  } else if (match(TOKEN_RETURN)) {
+  } else if (match(TokenType::TOKEN_RETURN)) {
     returnStatement();
-  } else if (match(TOKEN_WHILE)) {
+  } else if (match(TokenType::TOKEN_WHILE)) {
     whileStatement();
-  } else if (match(TOKEN_LEFT_BRACE)) {
+  } else if (match(TokenType::TOKEN_LEFT_BRACE)) {
     beginScope();
     block();
     endScope();
@@ -213,24 +213,24 @@ void Compiler::statement() {
 }
 
 void Compiler::ifStatement() {
-  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+  consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
   expression();
-  consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+  consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
   int thenJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP_IF_FALSE));
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
   statement();
   int elseJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP));
   patchJump(thenJump);
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
-  if (match(TOKEN_ELSE)) statement();
+  if (match(TokenType::TOKEN_ELSE)) statement();
   patchJump(elseJump);
 }
 
 void Compiler::whileStatement() {
   int loopStart = currentChunk()->getBytecodeCount();
-  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+  consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
   expression();
-  consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+  consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
   int exitJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP_IF_FALSE));
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
   statement();
@@ -241,10 +241,10 @@ void Compiler::whileStatement() {
 
 void Compiler::forStatement() {
   beginScope();
-  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
-  if (match(TOKEN_SEMICOLON)) {
+  consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
+  if (match(TokenType::TOKEN_SEMICOLON)) {
     // No initializer.
-  } else if (match(TOKEN_VAR)) {
+  } else if (match(TokenType::TOKEN_VAR)) {
     varDeclaration();
   } else {
     expressionStatement();
@@ -252,21 +252,21 @@ void Compiler::forStatement() {
 
   int loopStart = currentChunk()->getBytecodeCount();
   int exitJump = -1;
-  if (!match(TOKEN_SEMICOLON)) {
+  if (!match(TokenType::TOKEN_SEMICOLON)) {
     expression();
-    consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+    consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after loop condition.");
 
     // Jump out of the loop if the condition is false.
     exitJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP_IF_FALSE));
     emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
   }
 
-  if (!match(TOKEN_RIGHT_PAREN)) {
+  if (!match(TokenType::TOKEN_RIGHT_PAREN)) {
     int bodyJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP));
     int incrementStart = currentChunk()->getBytecodeCount();
     expression();
     emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
-    consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+    consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
     emitLoop(loopStart);
     loopStart = incrementStart;
     patchJump(bodyJump);
@@ -287,7 +287,7 @@ void Compiler::returnStatement() {
     reporter.error(previous, "Cannot return from top-level code.");
   }
 
-  if (match(TOKEN_SEMICOLON)) {
+  if (match(TokenType::TOKEN_SEMICOLON)) {
     emitReturn();
   } else {
     if (currentEnvironment->getFunctionType() == FunctionObject::FunctionType::TYPE_INITIALIZER) {
@@ -295,7 +295,7 @@ void Compiler::returnStatement() {
     }
 
     expression();
-    consume(TOKEN_SEMICOLON, "Expect ';' after return value.");
+    consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after return value.");
     emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_RETURN));
   }
 }
@@ -329,11 +329,11 @@ void Compiler::patchJump(int offset) {
 }
 
 void Compiler::block() {
-  while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+  while (!check(TokenType::TOKEN_RIGHT_BRACE) && !check(TokenType::TOKEN_EOF)) {
     declaration();
   }
 
-  consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+  consume(TokenType::TOKEN_RIGHT_BRACE, "Expect '}' after block.");
 }
 
 void Compiler::beginScope() {
@@ -359,18 +359,18 @@ void Compiler::endScope() {
 
 void Compiler::synchronise() {
   reporter.exitPanicMode();
-  while (current.type != TOKEN_EOF) {
-    if (previous.type == TOKEN_SEMICOLON) return;
+  while (current.type != TokenType::TOKEN_EOF) {
+    if (previous.type == TokenType::TOKEN_SEMICOLON) return;
 
     switch (current.type) {
-      case TOKEN_CLASS:
-      case TOKEN_FUNCTION:
-      case TOKEN_VAR:
-      case TOKEN_FOR:
-      case TOKEN_IF:
-      case TOKEN_WHILE:
-      case TOKEN_PRINT:
-      case TOKEN_RETURN:
+      case TokenType::TOKEN_CLASS:
+      case TokenType::TOKEN_FUNCTION:
+      case TokenType::TOKEN_VAR:
+      case TokenType::TOKEN_FOR:
+      case TokenType::TOKEN_IF:
+      case TokenType::TOKEN_WHILE:
+      case TokenType::TOKEN_PRINT:
+      case TokenType::TOKEN_RETURN:
         return;
 
       default:
@@ -383,18 +383,18 @@ void Compiler::synchronise() {
 
 void Compiler::printStatement() {
   expression();
-  consume(TOKEN_SEMICOLON, "Expect ';' after value.");
+  consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after value.");
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_PRINT));
 }
 
 void Compiler::expressionStatement() {
   expression();
-  consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
+  consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after expression.");
   emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
 }
 
 bool Compiler::match(TokenType type) {
-  if (type == TOKEN_EOF && check(type)) return true;
+  if (type == TokenType::TOKEN_EOF && check(type)) return true;
   if (!check(type)) return false;
 
   advance();
@@ -418,58 +418,58 @@ void Compiler::parsePrecedence(Precedence precedence) {
     invokeInfixRule(canAssign);
   }
 
-  if (canAssign && match(TOKEN_EQUAL)) {
+  if (canAssign && match(TokenType::TOKEN_EQUAL)) {
     reporter.error(previous, "Invalid assignment target.");
   }
 }
 
 void Compiler::invokePrefixRule(bool canAssign) {
   switch (previous.type) {
-    case TOKEN_MINUS:
-    case TOKEN_BANG:
+    case TokenType::TOKEN_MINUS:
+    case TokenType::TOKEN_BANG:
       unary(); break;
 
-    case TOKEN_TRUE:
-    case TOKEN_FALSE:
-    case TOKEN_NULL:
+    case TokenType::TOKEN_TRUE:
+    case TokenType::TOKEN_FALSE:
+    case TokenType::TOKEN_NULL:
       literal(); break;
 
-    case TOKEN_SUPER: super_(); break;
-    case TOKEN_THIS: this_(); break;
-    case TOKEN_LEFT_PAREN: grouping(); break;
-    case TOKEN_IDENTIFIER: variable(canAssign); break;
-    case TOKEN_STRING: string(); break;
-    case TOKEN_NUMBER: number(); break;
+    case TokenType::TOKEN_SUPER: super_(); break;
+    case TokenType::TOKEN_THIS: this_(); break;
+    case TokenType::TOKEN_LEFT_PAREN: grouping(); break;
+    case TokenType::TOKEN_IDENTIFIER: variable(canAssign); break;
+    case TokenType::TOKEN_STRING: string(); break;
+    case TokenType::TOKEN_NUMBER: number(); break;
 
-    case TOKEN_RIGHT_PAREN:
-    case TOKEN_LEFT_BRACE:
-    case TOKEN_RIGHT_BRACE:
-    case TOKEN_COMMA:
-    case TOKEN_DOT:
-    case TOKEN_PLUS:
-    case TOKEN_SEMICOLON:
-    case TOKEN_SLASH:
-    case TOKEN_STAR:
-    case TOKEN_BANG_EQUAL:
-    case TOKEN_EQUAL:
-    case TOKEN_EQUAL_EQUAL:
-    case TOKEN_GREATER:
-    case TOKEN_GREATER_EQUAL:
-    case TOKEN_LESS:
-    case TOKEN_LESS_EQUAL:
-    case TOKEN_AND:
-    case TOKEN_CLASS:
-    case TOKEN_ELSE:
-    case TOKEN_FOR:
-    case TOKEN_FUNCTION:
-    case TOKEN_IF:
-    case TOKEN_OR:
-    case TOKEN_PRINT:
-    case TOKEN_RETURN:
-    case TOKEN_VAR:
-    case TOKEN_WHILE:
-    case TOKEN_ERROR:
-    case TOKEN_EOF:
+    case TokenType::TOKEN_RIGHT_PAREN:
+    case TokenType::TOKEN_LEFT_BRACE:
+    case TokenType::TOKEN_RIGHT_BRACE:
+    case TokenType::TOKEN_COMMA:
+    case TokenType::TOKEN_DOT:
+    case TokenType::TOKEN_PLUS:
+    case TokenType::TOKEN_SEMICOLON:
+    case TokenType::TOKEN_SLASH:
+    case TokenType::TOKEN_STAR:
+    case TokenType::TOKEN_BANG_EQUAL:
+    case TokenType::TOKEN_EQUAL:
+    case TokenType::TOKEN_EQUAL_EQUAL:
+    case TokenType::TOKEN_GREATER:
+    case TokenType::TOKEN_GREATER_EQUAL:
+    case TokenType::TOKEN_LESS:
+    case TokenType::TOKEN_LESS_EQUAL:
+    case TokenType::TOKEN_AND:
+    case TokenType::TOKEN_CLASS:
+    case TokenType::TOKEN_ELSE:
+    case TokenType::TOKEN_FOR:
+    case TokenType::TOKEN_FUNCTION:
+    case TokenType::TOKEN_IF:
+    case TokenType::TOKEN_OR:
+    case TokenType::TOKEN_PRINT:
+    case TokenType::TOKEN_RETURN:
+    case TokenType::TOKEN_VAR:
+    case TokenType::TOKEN_WHILE:
+    case TokenType::TOKEN_ERROR:
+    case TokenType::TOKEN_EOF:
       reporter.error(previous, "Expect expression.");
       break;
 
@@ -482,52 +482,52 @@ void Compiler::invokePrefixRule(bool canAssign) {
 
 void Compiler::invokeInfixRule(bool canAssign) {
   switch (previous.type) {
-    case TOKEN_MINUS:
-    case TOKEN_PLUS:
-    case TOKEN_SLASH:
-    case TOKEN_STAR:
-    case TOKEN_BANG_EQUAL:
-    case TOKEN_EQUAL_EQUAL:
-    case TOKEN_GREATER:
-    case TOKEN_GREATER_EQUAL:
-    case TOKEN_LESS:
-    case TOKEN_LESS_EQUAL:
+    case TokenType::TOKEN_MINUS:
+    case TokenType::TOKEN_PLUS:
+    case TokenType::TOKEN_SLASH:
+    case TokenType::TOKEN_STAR:
+    case TokenType::TOKEN_BANG_EQUAL:
+    case TokenType::TOKEN_EQUAL_EQUAL:
+    case TokenType::TOKEN_GREATER:
+    case TokenType::TOKEN_GREATER_EQUAL:
+    case TokenType::TOKEN_LESS:
+    case TokenType::TOKEN_LESS_EQUAL:
       binary();
       break;
 
-    case TOKEN_AND: and_(); break;
-    case TOKEN_OR: or_(); break;
+    case TokenType::TOKEN_AND: and_(); break;
+    case TokenType::TOKEN_OR: or_(); break;
 
-    case TOKEN_DOT: dot(canAssign); break;
+    case TokenType::TOKEN_DOT: dot(canAssign); break;
 
-    case TOKEN_LEFT_PAREN: call(); break;
+    case TokenType::TOKEN_LEFT_PAREN: call(); break;
 
-    case TOKEN_RIGHT_PAREN:
-    case TOKEN_LEFT_BRACE:
-    case TOKEN_RIGHT_BRACE:
-    case TOKEN_COMMA:
-    case TOKEN_SEMICOLON:
-    case TOKEN_BANG:
-    case TOKEN_EQUAL:
-    case TOKEN_IDENTIFIER:
-    case TOKEN_STRING:
-    case TOKEN_NUMBER:
-    case TOKEN_CLASS:
-    case TOKEN_ELSE:
-    case TOKEN_FALSE:
-    case TOKEN_FOR:
-    case TOKEN_FUNCTION:
-    case TOKEN_IF:
-    case TOKEN_NULL:
-    case TOKEN_PRINT:
-    case TOKEN_RETURN:
-    case TOKEN_SUPER:
-    case TOKEN_THIS:
-    case TOKEN_TRUE:
-    case TOKEN_VAR:
-    case TOKEN_WHILE:
-    case TOKEN_ERROR:
-    case TOKEN_EOF:
+    case TokenType::TOKEN_RIGHT_PAREN:
+    case TokenType::TOKEN_LEFT_BRACE:
+    case TokenType::TOKEN_RIGHT_BRACE:
+    case TokenType::TOKEN_COMMA:
+    case TokenType::TOKEN_SEMICOLON:
+    case TokenType::TOKEN_BANG:
+    case TokenType::TOKEN_EQUAL:
+    case TokenType::TOKEN_IDENTIFIER:
+    case TokenType::TOKEN_STRING:
+    case TokenType::TOKEN_NUMBER:
+    case TokenType::TOKEN_CLASS:
+    case TokenType::TOKEN_ELSE:
+    case TokenType::TOKEN_FALSE:
+    case TokenType::TOKEN_FOR:
+    case TokenType::TOKEN_FUNCTION:
+    case TokenType::TOKEN_IF:
+    case TokenType::TOKEN_NULL:
+    case TokenType::TOKEN_PRINT:
+    case TokenType::TOKEN_RETURN:
+    case TokenType::TOKEN_SUPER:
+    case TokenType::TOKEN_THIS:
+    case TokenType::TOKEN_TRUE:
+    case TokenType::TOKEN_VAR:
+    case TokenType::TOKEN_WHILE:
+    case TokenType::TOKEN_ERROR:
+    case TokenType::TOKEN_EOF:
       break;
 
     default:
@@ -574,11 +574,11 @@ void Compiler::super_() {
     reporter.error(previous, "Cannot use 'super' in a class with no superclass.");
   }
 
-  consume(TOKEN_DOT, "Expect '.' after 'super'.");
-  consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
+  consume(TokenType::TOKEN_DOT, "Expect '.' after 'super'.");
+  consume(TokenType::TOKEN_IDENTIFIER, "Expect superclass method name.");
   uint8_t name = identifierConstant(previous);
   namedVariable(syntheticToken("this"), false);
-  if (match(TOKEN_LEFT_PAREN)) {
+  if (match(TokenType::TOKEN_LEFT_PAREN)) {
     uint8_t argCount = argumentList();
     namedVariable(syntheticToken("super"), false);
     emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_SUPER_INVOKE),
@@ -599,13 +599,13 @@ void Compiler::call() {
 }
 
 void Compiler::dot(bool canAssign) {
-  consume(TOKEN_IDENTIFIER, "Expect property name after '.'.");
+  consume(TokenType::TOKEN_IDENTIFIER, "Expect property name after '.'.");
   uint8_t name = identifierConstant(previous);
-  if (canAssign && match(TOKEN_EQUAL)) {
+  if (canAssign && match(TokenType::TOKEN_EQUAL)) {
     expression();
     emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_SET_PROPERTY),
               name);
-  } else if (match(TOKEN_LEFT_PAREN)) {
+  } else if (match(TokenType::TOKEN_LEFT_PAREN)) {
     uint8_t argCount = argumentList();
     emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_INVOKE),
               name);
@@ -619,7 +619,7 @@ void Compiler::dot(bool canAssign) {
 
 uint8_t Compiler::argumentList() {
   uint8_t argCount = 0;
-  if (!check(TOKEN_RIGHT_PAREN)) {
+  if (!check(TokenType::TOKEN_RIGHT_PAREN)) {
     do {
       expression();
       if (argCount == 255) {
@@ -627,22 +627,22 @@ uint8_t Compiler::argumentList() {
       }
 
       argCount++;
-    } while (match(TOKEN_COMMA));
+    } while (match(TokenType::TOKEN_COMMA));
   }
 
-  consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments.");
+  consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after arguments.");
   return argCount;
 }
 
 void Compiler::literal() {
   switch (previous.type) {
-    case TOKEN_FALSE:
+    case TokenType::TOKEN_FALSE:
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_FALSE));
       break;
-    case TOKEN_NULL:
+    case TokenType::TOKEN_NULL:
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_NULL));
       break;
-    case TOKEN_TRUE:
+    case TokenType::TOKEN_TRUE:
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_TRUE));
       break;
     default:
@@ -673,7 +673,7 @@ void Compiler::namedVariable(const Token &name, bool canAssign) {
     setOp = static_cast<unsigned int>(Chunk::OpCode::OP_SET_GLOBAL);
   }
 
-  if (canAssign && match(TOKEN_EQUAL)) {
+  if (canAssign && match(TokenType::TOKEN_EQUAL)) {
     expression();
     emitBytes(setOp, (uint8_t)arg);
   } else {
@@ -752,7 +752,7 @@ void Compiler::markInitialised() {
 }
 
 void Compiler::consume(TokenType type, const std::string &message) {
-  if (type == TOKEN_EOF && current.type == type) return;
+  if (type == TokenType::TOKEN_EOF && current.type == type) return;
 
   if (current.type == type) {
     advance();
@@ -764,17 +764,17 @@ void Compiler::consume(TokenType type, const std::string &message) {
 
 void Compiler::grouping() {
   expression();
-  consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
+  consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
 void Compiler::unary() {
   TokenType operatorType = previous.type;
   parsePrecedence(Precedence::UNARY);
   switch (operatorType) {
-    case TOKEN_BANG:
+    case TokenType::TOKEN_BANG:
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_NOT));
       break;
-    case TOKEN_MINUS:
+    case TokenType::TOKEN_MINUS:
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_NEGATE));
       break;
     default:
@@ -787,37 +787,37 @@ void Compiler::binary() {
   int precedence = static_cast<int>(tokenPrecedence.at(operatorType));
   parsePrecedence(static_cast<Precedence>(precedence + 1));
   switch (operatorType) {
-    case TOKEN_BANG_EQUAL:
+    case TokenType::TOKEN_BANG_EQUAL:
       emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_EQUAL),
                 static_cast<unsigned int>(Chunk::OpCode::OP_NOT));
       break;
-    case TOKEN_EQUAL_EQUAL:
+    case TokenType::TOKEN_EQUAL_EQUAL:
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_EQUAL));
       break;
-    case TOKEN_GREATER:
+    case TokenType::TOKEN_GREATER:
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_GREATER));
       break;
-    case TOKEN_GREATER_EQUAL:
+    case TokenType::TOKEN_GREATER_EQUAL:
       emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_LESS),
                 static_cast<unsigned int>(Chunk::OpCode::OP_NOT));
       break;
-    case TOKEN_LESS:
+    case TokenType::TOKEN_LESS:
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_LESS));
       break;
-    case TOKEN_LESS_EQUAL:
+    case TokenType::TOKEN_LESS_EQUAL:
       emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_GREATER),
                 static_cast<unsigned int>(Chunk::OpCode::OP_NOT));
       break;
-    case TOKEN_PLUS:
+    case TokenType::TOKEN_PLUS:
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_ADD));
       break;
-    case TOKEN_MINUS:
+    case TokenType::TOKEN_MINUS:
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_SUBTRACT));
       break;
-    case TOKEN_STAR:
+    case TokenType::TOKEN_STAR:
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_MULTIPLY));
       break;
-    case TOKEN_SLASH:
+    case TokenType::TOKEN_SLASH:
       emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_DIVIDE));
       break;
     default:

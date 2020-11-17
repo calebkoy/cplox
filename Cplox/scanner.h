@@ -5,9 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-// TODO: use an enum class.
-// See https://www.learncpp.com/cpp-tutorial/4-5a-enum-classes/
-enum TokenType {
+enum class TokenType {
   // Single-character tokens
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN,
   TOKEN_LEFT_BRACE, TOKEN_RIGHT_BRACE,
@@ -51,12 +49,12 @@ enum TokenType {
   TOKEN_ERROR
 };
 
-typedef struct {
-  TokenType type{ TOKEN_NULL };
+struct Token {
+  TokenType type{ TokenType::TOKEN_NULL };
   int line{ 0 };
   int length{ 0 };
   std::string lexeme;
-} Token;
+};
 
 class Scanner {
   std::string source;
@@ -65,23 +63,23 @@ class Scanner {
   int current{ 0 };
   int line{ 1 };
   std::unordered_map<std::string, TokenType> reservedWords = {
-    {"true", TOKEN_TRUE},
-    {"false", TOKEN_FALSE},
-    {"null", TOKEN_NULL},
-    {"function", TOKEN_FUNCTION},
-    {"class", TOKEN_CLASS},
-    {"var", TOKEN_VAR},
-    {"extends", TOKEN_EXTENDS},
-    {"print", TOKEN_PRINT},
-    {"for", TOKEN_FOR},
-    {"while", TOKEN_WHILE},
-    {"if", TOKEN_IF},
-    {"else", TOKEN_ELSE},
-    {"return", TOKEN_RETURN},
-    {"or", TOKEN_OR},
-    {"and", TOKEN_AND},
-    {"this", TOKEN_THIS},
-    {"super", TOKEN_SUPER}
+    {"true", TokenType::TOKEN_TRUE},
+    {"false", TokenType::TOKEN_FALSE},
+    {"null", TokenType::TOKEN_NULL},
+    {"function", TokenType::TOKEN_FUNCTION},
+    {"class", TokenType::TOKEN_CLASS},
+    {"var", TokenType::TOKEN_VAR},
+    {"extends", TokenType::TOKEN_EXTENDS},
+    {"print", TokenType::TOKEN_PRINT},
+    {"for", TokenType::TOKEN_FOR},
+    {"while", TokenType::TOKEN_WHILE},
+    {"if", TokenType::TOKEN_IF},
+    {"else", TokenType::TOKEN_ELSE},
+    {"return", TokenType::TOKEN_RETURN},
+    {"or", TokenType::TOKEN_OR},
+    {"and", TokenType::TOKEN_AND},
+    {"this", TokenType::TOKEN_THIS},
+    {"super", TokenType::TOKEN_SUPER}
   };
 
   bool isAtEnd();
