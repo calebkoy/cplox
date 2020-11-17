@@ -4,26 +4,15 @@
 #include <iostream>
 #include <memory>
 
-// Q: is there a better way of doing this than a macro?
-// Also note that this is duplicated in vm.cpp
-// TODO: prob remove this
-//#define AS_FUNCTION(object)  ((FunctionObject*)(object))
-
 void Chunk::appendByte(uint8_t byte, int line) {
   bytecode.push_back(byte);
-
   if (!lines.empty() && lines.at(lines.size()-1).line == line) return;
-
-  LineStart lineStart{ line, (int)(bytecode.size()-1) };
-  lines.push_back(lineStart);
+  lines.push_back({ line, static_cast<int>(bytecode.size()-1) });
 }
 
-// TODO: consider adding a name property to a chunk so it doesn't have
-// to be passed in to this method
 void Chunk::disassemble(const std::string &name) {
   std::cout << "== " << name << " ==\n";
-
-  for (int offset = 0; offset < (int)bytecode.size();) {
+  for (int offset = 0; offset < static_cast<int>(bytecode.size()); ) {
     offset = disassembleInstruction(offset);
   }
 }
@@ -107,11 +96,13 @@ int Chunk::disassembleInstruction(int offset) {
       printf("%-16s %4d ", "OP_CLOSURE", constant);
       std::cout << "<fn " << constants.at(constant) << ">\n";
       auto function = std::static_pointer_cast<FunctionObject>(constants.at(constant).asObject());
-      for (int j = 0; j < function->getUpvalueCount(); j++) {
+      auto upvalueCount = function->getUpvalueCount();
+      for (int j = 0; j < upvalueCount; j++) {
         int isLocal = bytecode.at(offset++);
         int index = bytecode.at(offset++);
         printf("%04d      |                     %s %d\n",
-               offset - 2, isLocal ? "local" : "upvalue",
+               offset - 2,
+               isLocal ? "local" : "upvalue",
                index);
       }
 
@@ -138,9 +129,9 @@ int Chunk::disassembleSimpleInstruction(const std::string& name, int offset) {
   return offset + 1;
 }
 
-int Chunk::addConstant(Value value) { // TODO: pass by const reference? Note that value has a shared_ptr
+int Chunk::addConstant(Value value) {
   constants.push_back(value);
-  return (int)(constants.size() - 1);
+  return static_cast<int>(constants.size() - 1);
 }
 
 int Chunk::disassembleConstantInstruction(const std::string& name, int offset) {
@@ -165,7 +156,7 @@ int Chunk::disassembleInvokeInstruction(const std::string& name, int offset) {
 }
 
 int Chunk::disassembleJumpInstruction(const std::string& name, int sign, int offset) {
-  uint16_t jump = (uint16_t)(bytecode.at(offset + 1) << 8);
+  uint16_t jump = static_cast<uint16_t>(bytecode.at(offset + 1) << 8);
   jump |= bytecode.at(offset + 2);
   printf("%-16s %4d -> %d\n", name.c_str(), offset, offset + 3 + (sign * jump));
   return offset + 3;
@@ -173,16 +164,16 @@ int Chunk::disassembleJumpInstruction(const std::string& name, int sign, int off
 
 int Chunk::getLine(int offset) {
   if (offset < 0) return -1;
-
   int start = 0;
-  int end = (int)(lines.size() - 1);
-
+  int end = static_cast<int>(lines.size() - 1);
   for (;;) {
     int mid = (start + end) / 2;
     LineStart lineStart = lines.at(mid);
     if (offset < lineStart.offset) {
       end = mid - 1;
-    } else if (mid == (int)(lines.size() - 1) || offset < lines.at(mid + 1).offset) {
+    } else if (mid == static_cast<int>(lines.size() - 1) ||
+               offset < lines.at(mid + 1).offset) {
+
       return lineStart.line;
     } else {
       start = mid + 1;
@@ -191,13 +182,11 @@ int Chunk::getLine(int offset) {
 }
 
 void Chunk::setBytecodeValue(int offset, uint8_t byte) {
-  // Q: error handling?
-
   bytecode.at(offset) = byte;
 }
 
 int Chunk::getBytecodeCount() {
-  return (int)bytecode.size(); // Q: is there anything wrong with casting to int?
+  return static_cast<int>(bytecode.size());
 }
 
 std::vector<uint8_t> Chunk::getBytecode() {
