@@ -8,15 +8,11 @@
 #include <memory>
 #include <unordered_map>
 
-// Q: is it possible to print this using an asClass() method in the Value class again?
-
 class ClassObject : public Object {
-  //StringObject* name;
   std::shared_ptr<StringObject> name;
-  std::unordered_map<std::string, Value> methods; // Q: should the values be pointers?
+  std::unordered_map<std::string, Value> methods;
 
 public:
-  ClassObject(); // Q: do we need a default constructor? Will we allow a class w/ no name?
   ClassObject(std::shared_ptr<StringObject> name);
 
   void setMethod(const std::string &name, Value method);
