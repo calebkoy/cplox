@@ -7,27 +7,20 @@
 #include <memory>
 
 class UpvalueObject : public Object {
-  Value* location;
+  Value* location{ nullptr };
   Value closed;
-
-  // Q: is there a better way of maintaining a list of upvalues w/o using an intrusive linked list?
-  //UpvalueObject* next;
   std::shared_ptr<UpvalueObject> next;
 
 public:
-  UpvalueObject();
   UpvalueObject(Value* location);
 
-  void setLocationValue(Value value);
+  void setLocationValue(const Value &value);
 
   Value* getLocation();
-  //UpvalueObject* getNext();
   std::shared_ptr<UpvalueObject> getNext();
   Value* getClosed();
-
-  //void setNext(UpvalueObject* next);
   void setNext(std::shared_ptr<UpvalueObject> next);
-  void setClosed(Value closed);
+  void setClosed(const Value &closed);
   void setLocation(Value* location);
 };
 
