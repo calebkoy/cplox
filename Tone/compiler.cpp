@@ -1,3 +1,4 @@
+#include "chunk.h"
 #include "compiler.h"
 #include "value.h"
 
@@ -88,7 +89,8 @@ void Compiler::function(FunctionType type) {
   //emitBytes(OP_CLOSURE, makeConstant(Value{ function })); // TODO: remove if working with shared_ptr
   // Q: is it a problem to pass ownership of `function` to a shared_ptr if function was 'part of' a
   // currentEnvironment which was itself wrapped in a unique_ptr?
-  emitBytes(OP_CLOSURE, makeConstant(Value{ std::shared_ptr<FunctionObject>(function) }));
+  emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_CLOSURE),
+            makeConstant(Value{ std::shared_ptr<FunctionObject>(function) }));
   for (const auto &upvalue : upvalues) {
     emitByte(upvalue.isLocal ? 1 : 0);
     emitByte(upvalue.index);
@@ -101,7 +103,7 @@ void Compiler::varDeclaration() {
   if (match(TOKEN_EQUAL)) {
     expression();
   } else {
-    emitByte(OP_NULL);
+    emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_NULL));
   }
   consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
 
@@ -114,7 +116,8 @@ void Compiler::classDeclaration() {
   uint8_t nameConstant = identifierConstant(&previous);
   declareVariable();
 
-  emitBytes(OP_CLASS, nameConstant);
+  emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_CLASS),
+            nameConstant);
   defineVariable(nameConstant);
 
   ClassEnvironment classEnvironment;
@@ -142,7 +145,7 @@ void Compiler::classDeclaration() {
     defineVariable(0);
 
     namedVariable(className, false);
-    emitByte(OP_INHERIT);
+    emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_INHERIT));
 
     classEnvironment.hasSuperclass = true;
   }
@@ -156,7 +159,7 @@ void Compiler::classDeclaration() {
     method();
   }
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
-  emitByte(OP_POP);
+  emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
 
   if (classEnvironment.hasSuperclass) {
     endScope();
@@ -182,7 +185,8 @@ void Compiler::method() {
     type = TYPE_INITIALIZER;
   }
   function(type);
-  emitBytes(OP_METHOD, constant);
+  emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_METHOD),
+            constant);
 }
 
 uint8_t Compiler::parseVariable(const std::string &errorMessage) {
@@ -223,14 +227,14 @@ void Compiler::ifStatement() {
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
 
-  int thenJump = emitJump(OP_JUMP_IF_FALSE);
-  emitByte(OP_POP);
+  int thenJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP_IF_FALSE));
+  emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
   statement();
 
-  int elseJump = emitJump(OP_JUMP);
+  int elseJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP));
 
   patchJump(thenJump);
-  emitByte(OP_POP);
+  emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
 
   if (match(TOKEN_ELSE)) statement();
   patchJump(elseJump);
@@ -243,15 +247,15 @@ void Compiler::whileStatement() {
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
 
-  int exitJump = emitJump(OP_JUMP_IF_FALSE);
+  int exitJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP_IF_FALSE));
 
-  emitByte(OP_POP);
+  emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
   statement();
 
   emitLoop(loopStart);
 
   patchJump(exitJump);
-  emitByte(OP_POP);
+  emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
 }
 
 void Compiler::forStatement() {
@@ -274,16 +278,16 @@ void Compiler::forStatement() {
     consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
 
     // Jump out of the loop if the condition is false.
-    exitJump = emitJump(OP_JUMP_IF_FALSE);
-    emitByte(OP_POP); // Condition.
+    exitJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP_IF_FALSE));
+    emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP)); // Condition.
   }
 
   if (!match(TOKEN_RIGHT_PAREN)) {
-    int bodyJump = emitJump(OP_JUMP);
+    int bodyJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP));
 
     int incrementStart = currentChunk()->getBytecodeCount();
     expression();
-    emitByte(OP_POP);
+    emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
 
     emitLoop(loopStart);
@@ -297,7 +301,7 @@ void Compiler::forStatement() {
 
   if (exitJump != -1) {
     patchJump(exitJump);
-    emitByte(OP_POP); // Condition.
+    emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP)); // Condition.
   }
 
   endScope();
@@ -317,12 +321,12 @@ void Compiler::returnStatement() {
 
     expression();
     consume(TOKEN_SEMICOLON, "Expect ';' after return value.");
-    emitByte(OP_RETURN);
+    emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_RETURN));
   }
 }
 
 void Compiler::emitLoop(int loopStart) {
-  emitByte(OP_LOOP);
+  emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_LOOP));
 
   int offset = currentChunk()->getBytecodeCount() - loopStart + 2;
   if (offset > std::numeric_limits<uint16_t>::max()) { // TODO: consider putting limits constant in constants header file
@@ -370,9 +374,9 @@ void Compiler::endScope() {
          (currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1))->depth >
             currentEnvironment->getScopeDepth()) {
     if (currentEnvironment->getLocal(currentEnvironment->getLocalCount() - 1)->isCaptured) {
-      emitByte(OP_CLOSE_UPVALUE);
+      emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_CLOSE_UPVALUE));
     } else {
-      emitByte(OP_POP);
+      emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
     }
     currentEnvironment->decrementLocalCount();
   }
@@ -407,13 +411,13 @@ void Compiler::synchronise() {
 void Compiler::printStatement() {
   expression();
   consume(TOKEN_SEMICOLON, "Expect ';' after value.");
-  emitByte(OP_PRINT);
+  emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_PRINT));
 }
 
 void Compiler::expressionStatement() {
   expression();
   consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
-  emitByte(OP_POP);
+  emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
 }
 
 bool Compiler::match(TokenType type) {
@@ -568,20 +572,20 @@ void Compiler::number() {
 }
 
 void Compiler::and_() {
-  int endJump = emitJump(OP_JUMP_IF_FALSE);
+  int endJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP_IF_FALSE));
 
-  emitByte(OP_POP);
+  emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
   parsePrecedence(PRECEDENCE_AND);
 
   patchJump(endJump);
 }
 
 void Compiler::or_() {
-  int elseJump = emitJump(OP_JUMP_IF_FALSE);
-  int endJump = emitJump(OP_JUMP);
+  int elseJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP_IF_FALSE));
+  int endJump = emitJump(static_cast<unsigned int>(Chunk::OpCode::OP_JUMP));
 
   patchJump(elseJump);
-  emitByte(OP_POP);
+  emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_POP));
 
   parsePrecedence(PRECEDENCE_OR);
   patchJump(endJump);
@@ -610,17 +614,20 @@ void Compiler::super_() {
   if (match(TOKEN_LEFT_PAREN)) {
     uint8_t argCount = argumentList();
     namedVariable(syntheticToken("super"), false);
-    emitBytes(OP_SUPER_INVOKE, name);
+    emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_SUPER_INVOKE),
+              name);
     emitByte(argCount);
   } else {
     namedVariable(syntheticToken("super"), false);
-    emitBytes(OP_GET_SUPER, name);
+    emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_GET_SUPER),
+              name);
   }
 }
 
 void Compiler::call() {
   uint8_t argCount = argumentList();
-  emitBytes(OP_CALL, argCount);
+  emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_CALL),
+            argCount);
 }
 
 void Compiler::dot(bool canAssign) {
@@ -629,13 +636,16 @@ void Compiler::dot(bool canAssign) {
 
   if (canAssign && match(TOKEN_EQUAL)) {
     expression();
-    emitBytes(OP_SET_PROPERTY, name);
+    emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_SET_PROPERTY),
+              name);
   } else if (match(TOKEN_LEFT_PAREN)) {
     uint8_t argCount = argumentList();
-    emitBytes(OP_INVOKE, name);
+    emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_INVOKE),
+              name);
     emitByte(argCount);
   } else {
-    emitBytes(OP_GET_PROPERTY, name);
+    emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_GET_PROPERTY),
+              name);
   }
 }
 
@@ -658,9 +668,15 @@ uint8_t Compiler::argumentList() {
 
 void Compiler::literal() {
   switch (previous.type) {
-    case TOKEN_FALSE: emitByte(OP_FALSE); break;
-    case TOKEN_NULL: emitByte(OP_NULL); break;
-    case TOKEN_TRUE: emitByte(OP_TRUE); break;
+    case TOKEN_FALSE:
+      emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_FALSE));
+      break;
+    case TOKEN_NULL:
+      emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_NULL));
+      break;
+    case TOKEN_TRUE:
+      emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_TRUE));
+      break;
     default:
       return;
   }
@@ -678,15 +694,15 @@ void Compiler::namedVariable(Token name, bool canAssign) {
   uint8_t getOp, setOp;
   int arg = currentEnvironment->resolveLocal(name);
   if (arg != -1) {
-    getOp = OP_GET_LOCAL;
-    setOp = OP_SET_LOCAL;
+    getOp = static_cast<unsigned int>(Chunk::OpCode::OP_GET_LOCAL);
+    setOp = static_cast<unsigned int>(Chunk::OpCode::OP_SET_LOCAL);
   } else if ((arg = currentEnvironment->resolveUpvalue(name)) != -1) {
-    getOp = OP_GET_UPVALUE;
-    setOp = OP_SET_UPVALUE;
+    getOp = static_cast<unsigned int>(Chunk::OpCode::OP_GET_UPVALUE);
+    setOp = static_cast<unsigned int>(Chunk::OpCode::OP_SET_UPVALUE);
   } else {
     arg = identifierConstant(&name); // Q: why pass a pointer? Good question.
-    getOp = OP_GET_GLOBAL;
-    setOp = OP_SET_GLOBAL;
+    getOp = static_cast<unsigned int>(Chunk::OpCode::OP_GET_GLOBAL);
+    setOp = static_cast<unsigned int>(Chunk::OpCode::OP_SET_GLOBAL);
   }
 
   if (canAssign && match(TOKEN_EQUAL)) {
@@ -720,7 +736,8 @@ std::shared_ptr<StringObject> Compiler::copyString(Token* name) {
 
 // Q: should this class be passed by value?
 void Compiler::emitConstant(Value value) {
-  emitBytes(OP_CONSTANT, makeConstant(value));
+  emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_CONSTANT),
+            makeConstant(value));
 }
 
 uint8_t Compiler::makeConstant(Value value) { // TODO: pass by const reference? Note that value has a shared_ptr
@@ -771,7 +788,8 @@ void Compiler::defineVariable(uint8_t global) {
     return;
   }
 
-  emitBytes(OP_DEFINE_GLOBAL, global);
+  emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_DEFINE_GLOBAL),
+            global);
 }
 
 void Compiler::markInitialised() {
@@ -800,8 +818,12 @@ void Compiler::unary() {
   TokenType operatorType = previous.type;
   parsePrecedence(PRECEDENCE_UNARY);
   switch (operatorType) {
-    case TOKEN_BANG: emitByte(OP_NOT); break;
-    case TOKEN_MINUS: emitByte(OP_NEGATE); break;
+    case TOKEN_BANG:
+      emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_NOT));
+      break;
+    case TOKEN_MINUS:
+      emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_NEGATE));
+      break;
     default:
       return;
   }
@@ -812,16 +834,39 @@ void Compiler::binary() {
   Precedence precedence = tokenPrecedence[operatorType];
   parsePrecedence((Precedence)(precedence + 1));
   switch (operatorType) {
-    case TOKEN_BANG_EQUAL:    emitBytes(OP_EQUAL, OP_NOT); break;
-    case TOKEN_EQUAL_EQUAL:   emitByte(OP_EQUAL); break;
-    case TOKEN_GREATER:       emitByte(OP_GREATER); break;
-    case TOKEN_GREATER_EQUAL: emitBytes(OP_LESS, OP_NOT); break;
-    case TOKEN_LESS:          emitByte(OP_LESS); break;
-    case TOKEN_LESS_EQUAL:    emitBytes(OP_GREATER, OP_NOT); break;
-    case TOKEN_PLUS:          emitByte(OP_ADD); break;
-    case TOKEN_MINUS:         emitByte(OP_SUBTRACT); break;
-    case TOKEN_STAR:          emitByte(OP_MULTIPLY); break;
-    case TOKEN_SLASH:         emitByte(OP_DIVIDE); break;
+    case TOKEN_BANG_EQUAL:
+      emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_EQUAL),
+                static_cast<unsigned int>(Chunk::OpCode::OP_NOT));
+      break;
+    case TOKEN_EQUAL_EQUAL:
+      emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_EQUAL));
+      break;
+    case TOKEN_GREATER:
+      emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_GREATER));
+      break;
+    case TOKEN_GREATER_EQUAL:
+      emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_LESS),
+                static_cast<unsigned int>(Chunk::OpCode::OP_NOT));
+      break;
+    case TOKEN_LESS:
+      emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_LESS));
+      break;
+    case TOKEN_LESS_EQUAL:
+      emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_GREATER),
+                static_cast<unsigned int>(Chunk::OpCode::OP_NOT));
+      break;
+    case TOKEN_PLUS:
+      emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_ADD));
+      break;
+    case TOKEN_MINUS:
+      emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_SUBTRACT));
+      break;
+    case TOKEN_STAR:
+      emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_MULTIPLY));
+      break;
+    case TOKEN_SLASH:
+      emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_DIVIDE));
+      break;
     default:
       return;
   }
@@ -851,11 +896,12 @@ FunctionObject* Compiler::endCompiler() {
 
 void Compiler::emitReturn() {
   if (currentEnvironment->getFunctionType() == TYPE_INITIALIZER) {
-    emitBytes(OP_GET_LOCAL, 0);
+    emitBytes(static_cast<unsigned int>(Chunk::OpCode::OP_GET_LOCAL),
+              0);
   } else {
-    emitByte(OP_NULL);
+    emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_NULL));
   }
-  emitByte(OP_RETURN);
+  emitByte(static_cast<unsigned int>(Chunk::OpCode::OP_RETURN));
 }
 
 // Q: is it better to return a pointer to a Chunk?

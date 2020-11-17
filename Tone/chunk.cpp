@@ -39,97 +39,96 @@ int Chunk::disassembleInstruction(int offset) {
 
   uint8_t instruction = bytecode.at(offset);
   switch (instruction) {
-    case OP_CONSTANT:
+    case static_cast<unsigned int>(OpCode::OP_CONSTANT):
       return disassembleConstantInstruction("OP_CONSTANT", offset);
-    case OP_NULL:
+    case static_cast<unsigned int>(OpCode::OP_NULL):
       return disassembleSimpleInstruction("OP_NULL", offset);
-    case OP_TRUE:
+    case static_cast<unsigned int>(OpCode::OP_TRUE):
       return disassembleSimpleInstruction("OP_TRUE", offset);
-    case OP_FALSE:
+    case static_cast<unsigned int>(OpCode::OP_FALSE):
       return disassembleSimpleInstruction("OP_FALSE", offset);
-    case OP_POP:
+    case static_cast<unsigned int>(OpCode::OP_POP):
       return disassembleSimpleInstruction("OP_POP", offset);
-    case OP_GET_LOCAL:
+    case static_cast<unsigned int>(OpCode::OP_GET_LOCAL):
       return disassembleByteInstruction("OP_GET_LOCAL", offset);
-    case OP_SET_LOCAL:
+    case static_cast<unsigned int>(OpCode::OP_SET_LOCAL):
       return disassembleByteInstruction("OP_SET_LOCAL", offset);
-    case OP_GET_GLOBAL:
+    case static_cast<unsigned int>(OpCode::OP_GET_GLOBAL):
       return disassembleConstantInstruction("OP_GET_GLOBAL", offset);
-    case OP_DEFINE_GLOBAL:
+    case static_cast<unsigned int>(OpCode::OP_DEFINE_GLOBAL):
       return disassembleConstantInstruction("OP_DEFINE_GLOBAL", offset);
-    case OP_SET_GLOBAL:
+    case static_cast<unsigned int>(OpCode::OP_SET_GLOBAL):
       return disassembleConstantInstruction("OP_SET_GLOBAL", offset);
-    case OP_GET_UPVALUE:
+    case static_cast<unsigned int>(OpCode::OP_GET_UPVALUE):
       return disassembleByteInstruction("OP_GET_UPVALUE", offset);
-    case OP_SET_UPVALUE:
+    case static_cast<unsigned int>(OpCode::OP_SET_UPVALUE):
       return disassembleByteInstruction("OP_SET_UPVALUE", offset);
-    case OP_GET_PROPERTY:
+    case static_cast<unsigned int>(OpCode::OP_GET_PROPERTY):
       return disassembleConstantInstruction("OP_GET_PROPERTY", offset);
-    case OP_SET_PROPERTY:
+    case static_cast<unsigned int>(OpCode::OP_SET_PROPERTY):
       return disassembleConstantInstruction("OP_SET_PROPERTY", offset);
-    case OP_GET_SUPER:
+    case static_cast<unsigned int>(OpCode::OP_GET_SUPER):
       return disassembleConstantInstruction("OP_GET_SUPER", offset);
-    case OP_EQUAL:
+    case static_cast<unsigned int>(OpCode::OP_EQUAL):
       return disassembleSimpleInstruction("OP_EQUAL", offset);
-    case OP_GREATER:
+    case static_cast<unsigned int>(OpCode::OP_GREATER):
       return disassembleSimpleInstruction("OP_GREATER", offset);
-    case OP_LESS:
+    case static_cast<unsigned int>(OpCode::OP_LESS):
       return disassembleSimpleInstruction("OP_LESS", offset);
-    case OP_ADD:
+    case static_cast<unsigned int>(OpCode::OP_ADD):
       return disassembleSimpleInstruction("OP_ADD", offset);
-    case OP_SUBTRACT:
+    case static_cast<unsigned int>(OpCode::OP_SUBTRACT):
       return disassembleSimpleInstruction("OP_SUBTRACT", offset);
-    case OP_MULTIPLY:
+    case static_cast<unsigned int>(OpCode::OP_MULTIPLY):
       return disassembleSimpleInstruction("OP_MULTIPLY", offset);
-    case OP_DIVIDE:
+    case static_cast<unsigned int>(OpCode::OP_DIVIDE):
       return disassembleSimpleInstruction("OP_DIVIDE", offset);
-    case OP_NOT:
+    case static_cast<unsigned int>(OpCode::OP_NOT):
       return disassembleSimpleInstruction("OP_NOT", offset);
-    case OP_NEGATE:
+    case static_cast<unsigned int>(OpCode::OP_NEGATE):
       return disassembleSimpleInstruction("OP_NEGATE", offset);
-    case OP_PRINT:
+    case static_cast<unsigned int>(OpCode::OP_PRINT):
       return disassembleSimpleInstruction("OP_PRINT", offset);
-    case OP_JUMP:
+    case static_cast<unsigned int>(OpCode::OP_JUMP):
       return disassembleJumpInstruction("OP_JUMP", 1, offset);
-    case OP_JUMP_IF_FALSE:
+    case static_cast<unsigned int>(OpCode::OP_JUMP_IF_FALSE):
       return disassembleJumpInstruction("OP_JUMP_IF_FALSE", 1, offset);
-    case OP_LOOP:
+    case static_cast<unsigned int>(OpCode::OP_LOOP):
       return disassembleJumpInstruction("OP_LOOP", -1, offset);
-    case OP_CALL:
+    case static_cast<unsigned int>(OpCode::OP_CALL):
       return disassembleByteInstruction("OP_CALL", offset);
-    case OP_INVOKE:
+    case static_cast<unsigned int>(OpCode::OP_INVOKE):
       return disassembleInvokeInstruction("OP_INVOKE", offset);
-    case OP_SUPER_INVOKE:
+    case static_cast<unsigned int>(OpCode::OP_SUPER_INVOKE):
       return disassembleInvokeInstruction("OP_SUPER_INVOKE", offset);
-    case OP_CLOSURE: {
+    case static_cast<unsigned int>(OpCode::OP_CLOSURE): {
       offset++;
       uint8_t constant = bytecode.at(offset++);
       printf("%-16s %4d ", "OP_CLOSURE", constant);
       std::cout << "<fn " << constants.at(constant) << ">\n";
-
-      //FunctionObject* function = AS_FUNCTION(constants.at(constant).asObject());
       auto function = std::static_pointer_cast<FunctionObject>(constants.at(constant).asObject());
       for (int j = 0; j < function->getUpvalueCount(); j++) {
         int isLocal = bytecode.at(offset++);
         int index = bytecode.at(offset++);
         printf("%04d      |                     %s %d\n",
-                       offset - 2, isLocal ? "local" : "upvalue", index);
+               offset - 2, isLocal ? "local" : "upvalue",
+               index);
       }
 
       return offset;
     }
-    case OP_CLOSE_UPVALUE:
+    case static_cast<unsigned int>(OpCode::OP_CLOSE_UPVALUE):
       return disassembleSimpleInstruction("OP_CLOSE_UPVALUE", offset);
-    case OP_RETURN:
+    case static_cast<unsigned int>(OpCode::OP_RETURN):
       return disassembleSimpleInstruction("OP_RETURN", offset);
-    case OP_CLASS:
+    case static_cast<unsigned int>(OpCode::OP_CLASS):
       return disassembleConstantInstruction("OP_CLASS", offset);
-    case OP_INHERIT:
+    case static_cast<unsigned int>(OpCode::OP_INHERIT):
       return disassembleSimpleInstruction("OP_INHERIT", offset);
-    case OP_METHOD:
+    case static_cast<unsigned int>(OpCode::OP_METHOD):
       return disassembleConstantInstruction("OP_METHOD", offset);
     default:
-      std::cout << "Unknown opcode " << instruction << '\n';
+      std::cout << "Unknown opcode " << +instruction << '\n';
       return offset + 1;
   }
 }

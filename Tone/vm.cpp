@@ -1,21 +1,15 @@
-#include "value.h"
-#include "vm.h"
+#include "boundmethodobject.h"
+#include "chunk.h"
 #include "closureobject.h"
 #include "instanceobject.h"
-#include "boundmethodobject.h"
+#include "value.h"
+#include "vm.h"
 
 #include <iostream>
-#include <memory> // for std::shared_ptr; remove if not using
+#include <memory>
 #include <stdarg.h> // Q: is this needed (for runtimeError())?
 
 //#define DEBUG_TRACE_EXECUTION
-
-// TODO: consider removing these macros!
-//#define AS_FUNCTION(object)  ((FunctionObject*)(object)) // Q: is there a better way of doing this than a macro?
-//#define AS_CLOSURE(object)  ((ClosureObject*)(object)) // Q: ditto
-//#define AS_INSTANCE(object)        ((InstanceObject*)(object)) // Q: ditto
-//#define AS_CLASS(object)        ((ClassObject*)(object)) // Q: ditto
-//#define AS_BOUND_METHOD(object)        ((BoundMethodObject*)(object)) // Q: ditto
 
 VM::VM() {
   openUpvalues = nullptr;
@@ -41,30 +35,34 @@ InterpretResult VM::run() {
 #endif // DEBUG_TRACE_EXECUTION
     uint8_t instruction;
     switch (instruction = readByte(frame)) {
-      case OP_CONSTANT: {
+    case static_cast<unsigned int>(Chunk::OpCode::OP_CONSTANT): {
         Value constant = readConstant(frame);
         stack.push(constant);
         break;
       }
       // Q: how can I write this so I don't have to pass in 0?
-      case OP_NULL: stack.push(Value{ Value::ValueType::VAL_NULL, 0 }); break;
-      case OP_TRUE: stack.push(Value{ true }); break;
-      case OP_FALSE: stack.push(Value{ false }); break;
-      case OP_POP: stack.pop(); break;
-      case OP_GET_LOCAL: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_NULL):
+        stack.push(Value{ Value::ValueType::VAL_NULL, 0 }); break;
+      case static_cast<unsigned int>(Chunk::OpCode::OP_TRUE):
+        stack.push(Value{ true }); break;
+      case static_cast<unsigned int>(Chunk::OpCode::OP_FALSE):
+        stack.push(Value{ false }); break;
+      case static_cast<unsigned int>(Chunk::OpCode::OP_POP):
+        stack.pop(); break;
+      case static_cast<unsigned int>(Chunk::OpCode::OP_GET_LOCAL): {
         uint8_t slot = readByte(frame);
         stack.push(frame->slots[slot]);
         break;
       }
 
-      case OP_SET_LOCAL: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_SET_LOCAL): {
         uint8_t slot = readByte(frame);
         frame->slots[slot] = stack.peek(0);
         //stack.set(slot, stack.peek(0));
         break;
       }
 
-      case OP_GET_GLOBAL: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_GET_GLOBAL): {
         auto name = readString(frame);
         Value value;
         std::unordered_map<std::string, Value>::iterator it = globals.find(name->getChars());
@@ -76,14 +74,14 @@ InterpretResult VM::run() {
         stack.push(value);
         break;
       }
-      case OP_DEFINE_GLOBAL: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_DEFINE_GLOBAL): {
         auto name = readString(frame);
         globals[name->getChars()] = stack.peek(0);
         stack.pop();
         break;
       }
 
-      case OP_SET_GLOBAL: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_SET_GLOBAL): {
         auto name = readString(frame);
         std::unordered_map<std::string, Value>::iterator it = globals.find(name->getChars());
         if (it == globals.end()) {
@@ -98,19 +96,19 @@ InterpretResult VM::run() {
         break;
       }
 
-      case OP_GET_UPVALUE: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_GET_UPVALUE): {
         uint8_t slot = readByte(frame);
         stack.push(*frame->closure->getUpvalue(slot)->getLocation());
         break;
       }
 
-      case OP_SET_UPVALUE: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_SET_UPVALUE): {
         uint8_t slot = readByte(frame);
         frame->closure->getUpvalue(slot)->setLocationValue(stack.peek(0));
         break;
       }
 
-      case OP_GET_PROPERTY: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_GET_PROPERTY): {
         if (!stack.peek(0).isInstance()) {
           runtimeError("Only instances have properties.");
           return INTERPRET_RUNTIME_ERROR;
@@ -135,7 +133,7 @@ InterpretResult VM::run() {
         break;
       }
 
-      case OP_SET_PROPERTY: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_SET_PROPERTY): {
         if (!stack.peek(1).isInstance()) {
           runtimeError("Only instances have fields.");
           return INTERPRET_RUNTIME_ERROR;
@@ -150,7 +148,7 @@ InterpretResult VM::run() {
         break;
       }
 
-      case OP_GET_SUPER: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_GET_SUPER): {
         auto name = readString(frame);
         //ClassObject* superclass = AS_CLASS(stack.pop().asObject());
         auto superclass = std::static_pointer_cast<ClassObject>(stack.pop().asObject());
@@ -160,27 +158,27 @@ InterpretResult VM::run() {
         break;
       }
 
-      case OP_EQUAL: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_EQUAL): {
         Value b = stack.pop();
         Value a = stack.pop();
         stack.push(Value{ valuesEqual(a, b) });
         break;
       }
-      case OP_GREATER:
+      case static_cast<unsigned int>(Chunk::OpCode::OP_GREATER):
         if (!stack.peek(0).isNumber() || !stack.peek(1).isNumber()) {
           runtimeError("Operands must be numbers.");
           return INTERPRET_RUNTIME_ERROR;
         }
         greaterThan();
         break;
-      case OP_LESS:
+      case static_cast<unsigned int>(Chunk::OpCode::OP_LESS):
         if (!stack.peek(0).isNumber() || !stack.peek(1).isNumber()) {
           runtimeError("Operands must be numbers.");
           return INTERPRET_RUNTIME_ERROR;
         }
         lessThan();
         break;
-      case OP_ADD:
+      case static_cast<unsigned int>(Chunk::OpCode::OP_ADD):
         if (stack.peek(0).isString() && stack.peek(1).isString()) {
           auto b = stack.pop().asString();
           auto a = stack.pop().asString();
@@ -196,31 +194,31 @@ InterpretResult VM::run() {
           return INTERPRET_RUNTIME_ERROR;
         }
         break;
-      case OP_SUBTRACT:
+      case static_cast<unsigned int>(Chunk::OpCode::OP_SUBTRACT):
         if (!stack.peek(0).isNumber() || !stack.peek(1).isNumber()) {
           runtimeError("Operands must be numbers.");
           return INTERPRET_RUNTIME_ERROR;
         }
         subtract();
         break;
-      case OP_DIVIDE:
+      case static_cast<unsigned int>(Chunk::OpCode::OP_DIVIDE):
         if (!stack.peek(0).isNumber() || !stack.peek(1).isNumber()) {
           runtimeError("Operands must be numbers.");
           return INTERPRET_RUNTIME_ERROR;
         }
         divide();
         break;
-      case OP_MULTIPLY:
+      case static_cast<unsigned int>(Chunk::OpCode::OP_MULTIPLY):
         if (!stack.peek(0).isNumber() || !stack.peek(1).isNumber()) {
           runtimeError("Operands must be numbers.");
           return INTERPRET_RUNTIME_ERROR;
         }
         multiply();
         break;
-      case OP_NOT:
+      case static_cast<unsigned int>(Chunk::OpCode::OP_NOT):
         stack.push(Value{ stack.pop().isFalsey() });
         break;
-      case OP_NEGATE: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_NEGATE): {
         if (!stack.peek(0).isNumber()) {
           runtimeError("Operand must be a number."); // Q: should this be handled by ErrorReporter?
           return INTERPRET_RUNTIME_ERROR;
@@ -230,33 +228,33 @@ InterpretResult VM::run() {
         stack.push(Value{ Value::ValueType::VAL_NUMBER, negatedValue });
         break;
       }
-      case OP_PRINT: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_PRINT): {
         std::cout << stack.pop() << '\n';
         break;
       }
 
-      case OP_JUMP: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_JUMP): {
         uint16_t offset = readShort(frame);
         frame->functionProgramCounter += offset;
         //programCounter += offset;
         break;
       }
 
-      case OP_JUMP_IF_FALSE: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_JUMP_IF_FALSE): {
         uint16_t offset = readShort(frame);
         if (stack.peek(0).isFalsey()) frame->functionProgramCounter += offset;
         //if (stack.peek(0).isFalsey()) programCounter += offset;
         break;
       }
 
-      case OP_LOOP: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_LOOP): {
         uint16_t offset = readShort(frame);
         frame->functionProgramCounter -= offset;
         //programCounter -= offset;
         break;
       }
 
-      case OP_CALL: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_CALL): {
         int argCount = readByte(frame); // Q: is a cast to int needed/preferable here?
         if (!callValue(stack.peek(argCount), argCount)) {
           return INTERPRET_RUNTIME_ERROR;
@@ -265,7 +263,7 @@ InterpretResult VM::run() {
         break;
       }
 
-      case OP_INVOKE: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_INVOKE): {
         auto method = readString(frame);
         int argCount = readByte(frame);
         if (!invoke(method.get(), argCount)) {
@@ -275,7 +273,7 @@ InterpretResult VM::run() {
         break;
       }
 
-      case OP_SUPER_INVOKE: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_SUPER_INVOKE): {
         auto method = readString(frame);
         int argCount = readByte(frame);
         //ClassObject* superclass = AS_CLASS(stack.pop().asObject());
@@ -287,7 +285,7 @@ InterpretResult VM::run() {
         break;
       }
 
-      case OP_CLOSURE: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_CLOSURE): {
         //FunctionObject* function = AS_FUNCTION(readConstant(frame).asObject());
         auto function = std::static_pointer_cast<FunctionObject>(readConstant(frame).asObject());
 
@@ -312,12 +310,12 @@ InterpretResult VM::run() {
         break;
       }
 
-      case OP_CLOSE_UPVALUE:
+      case static_cast<unsigned int>(Chunk::OpCode::OP_CLOSE_UPVALUE):
         closeUpvalues(stack.getTop() - 1);
         stack.pop();
         break;
 
-      case OP_RETURN: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_RETURN): {
         Value result = stack.pop();
 
         closeUpvalues(frame->slots);
@@ -337,13 +335,13 @@ InterpretResult VM::run() {
         break;
       }
 
-      case OP_CLASS: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_CLASS): {
         auto classObject{ std::make_shared<ClassObject>(readString(frame)) };
         stack.push(Value{ classObject });
         break;
       }
 
-      case OP_INHERIT: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_INHERIT): {
         Value superclass = stack.peek(1);
         if (!superclass.isClass()) {
           runtimeError("Superclass must be a class.");
@@ -361,7 +359,7 @@ InterpretResult VM::run() {
         break;
       }
 
-      case OP_METHOD: {
+      case static_cast<unsigned int>(Chunk::OpCode::OP_METHOD): {
         defineMethod(readString(frame).get());
         break;
       }
