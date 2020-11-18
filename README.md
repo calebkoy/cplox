@@ -4,7 +4,7 @@ A scripting language built in C++
 
 ## What is this?
 
-cplox is a C++17 port of Bob Nystrom's programming language [Lox](https://github.com/munificent/craftinginterpreters), from the book [Crafting Interpreters](http://craftinginterpreters.com/).
+cplox is a C++17 port of Bob Nystrom's programming language [Lox](https://github.com/munificent/craftinginterpreters), from the book [_Crafting Interpreters_](http://craftinginterpreters.com/).
 
 The aim of this project is to learn how programming languages are built from the ground up.
 
@@ -18,7 +18,7 @@ To build the interpreter, you'll need [make](https://www.gnu.org/software/make/)
 $ make cplox
 ```
 
-This will copy the built interpreter into the root of the repository. You can run the REPL with this command:
+This will copy the built interpreter into the root of the repository. You can run the (single-line command) REPL with this command:
 
 ```sh
 $ ./cplox
@@ -27,7 +27,7 @@ $ ./cplox
 And you can run a program with this command:
 
 ```sh
-$ ./cplox [program].lox
+$ ./cplox [program-name].lox
 ```
 
 To run the tests, you'll need [Dart](https://dart.dev/get-dart). Once you've installed it, run the following command to get the dependencies:
