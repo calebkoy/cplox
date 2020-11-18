@@ -45,15 +45,15 @@ void _setUpInterpreter() {
   var tests = {
     "test": "pass",
     "test/scanning": "skip", // These were only run when building the scanner.
-    "test/string/literals.cplox": "skip", // TODO: fix non-ASCII printing issue.
-    "test/string/multiline.cplox": "skip" // TODO: fix conversion from stdout.
+    "test/string/literals.lox": "skip", // TODO: fix non-ASCII printing issue.
+    "test/string/multiline.lox": "skip" // TODO: fix conversion from stdout.
   };
 
   _interpreter = Interpreter("build/cploxd", tests);  
 }
 
 bool _runTests() {    
-  for (var file in Glob("test/**.cplox").listSync()) {
+  for (var file in Glob("test/**.lox").listSync()) {
     _runTest(file.path);
   }
 
