@@ -50,10 +50,11 @@ Contributions are welcome! To contribute to Lox, see the [repo](https://github.c
 
 * Create a personal fork of this GitHub repo.
 * In your fork, create a branch off the **master** branch.
-* Make and commit your changes to your branch, keeping the following in mind:
+* Make your changes on your branch, keeping the following in mind:
     * Follow the current coding style.
     * Include tests when adding a new feature.
 * Build the repo with your changes, and ensure that all tests pass.
+* Commit your changes to your branch.
 * Create a pull request (PR) against the repo's **master** branch:
     * Add a title that summarises the changes.
     * In the description, list the main changes.
